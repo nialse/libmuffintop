@@ -4,6 +4,8 @@
 
 target triple = "x86_64-unknown-linux-gnu"
 
+%struct.timespec = type { i64, i64 }
+
 @mtrt_errno = global i32 0, align 4
 
 declare i64 @__mtrt_host_getpid()
@@ -754,10 +756,43 @@ entry:
   ret i64 %r
 }
 
-define i64 @sleep(...) {
+define i64 @sleep(i64 %seconds) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %req = alloca %struct.timespec, align 8
+  %rem = alloca %struct.timespec, align 8
+
+  %req_sec = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 0
+  %req_nsec = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 1
+  store i64 %seconds, ptr %req_sec, align 8
+  store i64 0, ptr %req_nsec, align 8
+
+  br label %loop
+
+loop:
+  %rc = call i32 @nanosleep(ptr %req, ptr %rem)
+  %ok = icmp eq i32 %rc, 0
+  br i1 %ok, label %done_zero, label %check_intr
+
+check_intr:
+  %ep = call ptr @__errno_location()
+  %ev = load i32, ptr %ep, align 4
+  %is_eintr = icmp eq i32 %ev, 4
+  br i1 %is_eintr, label %continue, label %done_orig
+
+continue:
+  %rem_sec = getelementptr inbounds %struct.timespec, ptr %rem, i32 0, i32 0
+  %rem_nsec = getelementptr inbounds %struct.timespec, ptr %rem, i32 0, i32 1
+  %next_sec = load i64, ptr %rem_sec, align 8
+  %next_nsec = load i64, ptr %rem_nsec, align 8
+  store i64 %next_sec, ptr %req_sec, align 8
+  store i64 %next_nsec, ptr %req_nsec, align 8
+  br label %loop
+
+done_zero:
+  ret i64 0
+
+done_orig:
+  ret i64 %seconds
 }
 
 define i64 @stat(...) {
@@ -784,10 +819,28 @@ entry:
   ret i64 %r
 }
 
-define i64 @time(...) {
+define i64 @time(ptr %tloc) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %ts = alloca %struct.timespec, align 8
+  %rc = call i32 @clock_gettime(i32 0, ptr %ts)
+  %ok = icmp eq i32 %rc, 0
+  br i1 %ok, label %extract, label %fail
+
+extract:
+  %secp = getelementptr inbounds %struct.timespec, ptr %ts, i32 0, i32 0
+  %sec = load i64, ptr %secp, align 8
+  %has_tloc = icmp ne ptr %tloc, null
+  br i1 %has_tloc, label %store, label %ret
+
+store:
+  store i64 %sec, ptr %tloc, align 8
+  br label %ret
+
+ret:
+  ret i64 %sec
+
+fail:
+  ret i64 -1
 }
 
 define i64 @times(...) {
@@ -814,10 +867,25 @@ entry:
   ret i64 %r
 }
 
-define i64 @usleep(...) {
+define i64 @usleep(i64 %usec) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %too_large = icmp uge i64 %usec, 1000000
+  br i1 %too_large, label %einval, label %do_sleep
+
+einval:
+  store i32 22, ptr @mtrt_errno, align 4
+  ret i64 -1
+
+do_sleep:
+  %req = alloca %struct.timespec, align 8
+  %secp = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 0
+  %nsecp = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 1
+  %nsec = mul i64 %usec, 1000
+  store i64 0, ptr %secp, align 8
+  store i64 %nsec, ptr %nsecp, align 8
+  %rc = call i32 @nanosleep(ptr %req, ptr null)
+  %ret = sext i32 %rc to i64
+  ret i64 %ret
 }
 
 define i64 @vfork(...) {
@@ -837,4 +905,3 @@ entry:
   %r = call i64 @__muffintop_enosys_i64()
   ret i64 %r
 }
-
