@@ -234,9 +234,9 @@ entry:
   ret i64 %r
 }
 
-define void @exit(...) {
+define void @exit(i32 %status) {
 entry:
-  call void @_exit(i32 38)
+  call void @_exit(i32 %status)
   unreachable
 }
 
