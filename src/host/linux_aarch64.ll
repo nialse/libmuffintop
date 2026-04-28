@@ -1,4 +1,4 @@
-; Linux AArch64 kernel-translation host layer for libmuffintop
+; Linux AArch64 kernel-primitive host layer for libmuffintop.
 ; Direct syscall path (no libc).
 
 target triple = "aarch64-unknown-linux-gnu"

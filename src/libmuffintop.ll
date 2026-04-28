@@ -1,11 +1,12 @@
-; POSIX API surface for libmuffintop.
-; Exposes POSIX signatures and translates kernel-style return conventions.
-; This file is the single cross-platform POSIX API layer.
+; libmuffintop public LLVM IR ABI surface.
+; Public names are POSIX-derived, but the target ABI is not the C POSIX ABI.
+; Current scaffold code still translates some host errors through mtrt_errno.
 
 target triple = "x86_64-unknown-linux-gnu"
 
 %struct.timespec = type { i64, i64 }
 
+; Current compatibility scaffold only. Target ABI returns negative errno values.
 @mtrt_errno = global i32 0, align 4
 
 declare i64 @__mtrt_host_getpid()
@@ -131,7 +132,7 @@ entry:
   %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
   ret i32 %ret
 }
-; Auto-generated POSIX API stubs for symbols not yet host-wired.
+; Current ENOSYS stubs for exported symbols not yet classified or host-wired.
 define internal i64 @__muffintop_enosys_i64() {
 entry:
   store i32 38, ptr @mtrt_errno, align 4

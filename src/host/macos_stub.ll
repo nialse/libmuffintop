@@ -1,6 +1,6 @@
-; macOS host translation layer for libmuffintop.
-; Resolves libc entry points with dlsym(RTLD_NEXT, ...) to avoid recursing
-; back into the executable's own exported POSIX wrappers.
+; Temporary macOS host bridge for current scaffold behavior.
+; This libSystem/dlsym path is quarantined and is not the target architecture.
+; Target macOS work should use a direct kernel-primitive path or mark gaps.
 
 target triple = "arm64-apple-macosx13.0.0"
 
