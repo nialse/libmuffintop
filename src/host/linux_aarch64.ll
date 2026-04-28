@@ -3,6 +3,10 @@
 
 target triple = "aarch64-unknown-linux-gnu"
 
+%struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
+
+@.mtrt_empty_path = private unnamed_addr constant [1 x i8] zeroinitializer
+
 define internal i64 @__mtrt_linux_syscall0(i64 %nr) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},~{memory}"(i64 %nr)
@@ -37,6 +41,129 @@ define internal i64 @__mtrt_linux_syscall5(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},{x1},{x2},{x3},{x4},~{memory}"(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5)
   ret i64 %ret
+}
+
+define internal i64 @__mtrt_linux_makedev(i32 %major32, i32 %minor32) {
+entry:
+  %major = zext i32 %major32 to i64
+  %minor = zext i32 %minor32 to i64
+  %minor_low = and i64 %minor, 255
+  %major_low = and i64 %major, 4095
+  %major_low_shifted = shl i64 %major_low, 8
+  %minor_high = and i64 %minor, 4294967040
+  %minor_high_shifted = shl i64 %minor_high, 12
+  %major_high = and i64 %major, 4294963200
+  %major_high_shifted = shl i64 %major_high, 32
+  %low = or i64 %minor_low, %major_low_shifted
+  %with_minor_high = or i64 %low, %minor_high_shifted
+  %dev = or i64 %with_minor_high, %major_high_shifted
+  ret i64 %dev
+}
+
+define internal void @__mtrt_linux_store_statx(ptr %out, ptr %sx) {
+entry:
+  %blksize_p = getelementptr i8, ptr %sx, i64 4
+  %blksize32 = load i32, ptr %blksize_p, align 4
+  %blksize = zext i32 %blksize32 to i64
+  %nlink_p = getelementptr i8, ptr %sx, i64 16
+  %nlink32 = load i32, ptr %nlink_p, align 4
+  %nlink = zext i32 %nlink32 to i64
+  %uid_p = getelementptr i8, ptr %sx, i64 20
+  %uid = load i32, ptr %uid_p, align 4
+  %gid_p = getelementptr i8, ptr %sx, i64 24
+  %gid = load i32, ptr %gid_p, align 4
+  %mode_p = getelementptr i8, ptr %sx, i64 28
+  %mode16 = load i16, ptr %mode_p, align 2
+  %mode = zext i16 %mode16 to i32
+  %ino_p = getelementptr i8, ptr %sx, i64 32
+  %ino = load i64, ptr %ino_p, align 8
+  %size_p = getelementptr i8, ptr %sx, i64 40
+  %size = load i64, ptr %size_p, align 8
+  %blocks_p = getelementptr i8, ptr %sx, i64 48
+  %blocks = load i64, ptr %blocks_p, align 8
+  %atime_sec_p = getelementptr i8, ptr %sx, i64 64
+  %atime_sec = load i64, ptr %atime_sec_p, align 8
+  %atime_nsec_p = getelementptr i8, ptr %sx, i64 72
+  %atime_nsec32 = load i32, ptr %atime_nsec_p, align 4
+  %atime_nsec = zext i32 %atime_nsec32 to i64
+  %ctime_sec_p = getelementptr i8, ptr %sx, i64 96
+  %ctime_sec = load i64, ptr %ctime_sec_p, align 8
+  %ctime_nsec_p = getelementptr i8, ptr %sx, i64 104
+  %ctime_nsec32 = load i32, ptr %ctime_nsec_p, align 4
+  %ctime_nsec = zext i32 %ctime_nsec32 to i64
+  %mtime_sec_p = getelementptr i8, ptr %sx, i64 112
+  %mtime_sec = load i64, ptr %mtime_sec_p, align 8
+  %mtime_nsec_p = getelementptr i8, ptr %sx, i64 120
+  %mtime_nsec32 = load i32, ptr %mtime_nsec_p, align 4
+  %mtime_nsec = zext i32 %mtime_nsec32 to i64
+  %rdev_major_p = getelementptr i8, ptr %sx, i64 128
+  %rdev_major = load i32, ptr %rdev_major_p, align 4
+  %rdev_minor_p = getelementptr i8, ptr %sx, i64 132
+  %rdev_minor = load i32, ptr %rdev_minor_p, align 4
+  %dev_major_p = getelementptr i8, ptr %sx, i64 136
+  %dev_major = load i32, ptr %dev_major_p, align 4
+  %dev_minor_p = getelementptr i8, ptr %sx, i64 140
+  %dev_minor = load i32, ptr %dev_minor_p, align 4
+  %dev = call i64 @__mtrt_linux_makedev(i32 %dev_major, i32 %dev_minor)
+  %rdev = call i64 @__mtrt_linux_makedev(i32 %rdev_major, i32 %rdev_minor)
+
+  %dev_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 0
+  store i64 %dev, ptr %dev_out, align 8
+  %ino_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 1
+  store i64 %ino, ptr %ino_out, align 8
+  %nlink_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 2
+  store i64 %nlink, ptr %nlink_out, align 8
+  %mode_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 3
+  store i32 %mode, ptr %mode_out, align 4
+  %uid_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 4
+  store i32 %uid, ptr %uid_out, align 4
+  %gid_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 5
+  store i32 %gid, ptr %gid_out, align 4
+  %rdev_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 6
+  store i64 %rdev, ptr %rdev_out, align 8
+  %size_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 7
+  store i64 %size, ptr %size_out, align 8
+  %blksize_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 8
+  store i64 %blksize, ptr %blksize_out, align 8
+  %blocks_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 9
+  store i64 %blocks, ptr %blocks_out, align 8
+  %atime_sec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 10
+  store i64 %atime_sec, ptr %atime_sec_out, align 8
+  %atime_nsec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 11
+  store i64 %atime_nsec, ptr %atime_nsec_out, align 8
+  %mtime_sec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 12
+  store i64 %mtime_sec, ptr %mtime_sec_out, align 8
+  %mtime_nsec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 13
+  store i64 %mtime_nsec, ptr %mtime_nsec_out, align 8
+  %ctime_sec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 14
+  store i64 %ctime_sec, ptr %ctime_sec_out, align 8
+  %ctime_nsec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 15
+  store i64 %ctime_nsec, ptr %ctime_nsec_out, align 8
+  ret void
+}
+
+define internal i64 @__mtrt_linux_statx_to_target(i64 %dirfd, ptr %path, i64 %flags, ptr %buf) {
+entry:
+  %is_null = icmp eq ptr %buf, null
+  br i1 %is_null, label %fault, label %call_statx
+
+fault:
+  ret i64 -14
+
+call_statx:
+  %sx = alloca [256 x i8], align 8
+  %path_i = ptrtoint ptr %path to i64
+  %sx_i = ptrtoint ptr %sx to i64
+  %r = call i64 @__mtrt_linux_syscall5(i64 291, i64 %dirfd, i64 %path_i, i64 %flags, i64 2047, i64 %sx_i)
+  %ok = icmp eq i64 %r, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  call void @__mtrt_linux_store_statx(ptr %buf, ptr %sx)
+  ret i64 0
+
+done:
+  ret i64 %r
 }
 
 define i64 @__mtrt_host_getpid() {
@@ -326,5 +453,25 @@ define i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
   %target_i = ptrtoint ptr %target to i64
   %linkpath_i = ptrtoint ptr %linkpath to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 36, i64 %target_i, i64 %newdirfd, i64 %linkpath_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_stat(ptr %path, ptr %buf) {
+  %r = call i64 @__mtrt_linux_statx_to_target(i64 -100, ptr %path, i64 0, ptr %buf)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fstat(i64 %fd, ptr %buf) {
+  %r = call i64 @__mtrt_linux_statx_to_target(i64 %fd, ptr @.mtrt_empty_path, i64 4096, ptr %buf)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
+  %r = call i64 @__mtrt_linux_statx_to_target(i64 -100, ptr %path, i64 256, ptr %buf)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
+  %r = call i64 @__mtrt_linux_statx_to_target(i64 %dirfd, ptr %path, i64 %flags, ptr %buf)
   ret i64 %r
 }

@@ -4,6 +4,8 @@
 
 target triple = "arm64-apple-macosx13.0.0"
 
+%struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
+
 @.sym_getpid = private unnamed_addr constant [7 x i8] c"getpid\00"
 @.sym_getppid = private unnamed_addr constant [8 x i8] c"getppid\00"
 @.sym_fork = private unnamed_addr constant [5 x i8] c"fork\00"
@@ -51,6 +53,10 @@ target triple = "arm64-apple-macosx13.0.0"
 @.sym_rmdir = private unnamed_addr constant [6 x i8] c"rmdir\00"
 @.sym_symlink = private unnamed_addr constant [8 x i8] c"symlink\00"
 @.sym_symlinkat = private unnamed_addr constant [10 x i8] c"symlinkat\00"
+@.sym_stat = private unnamed_addr constant [5 x i8] c"stat\00"
+@.sym_fstat = private unnamed_addr constant [6 x i8] c"fstat\00"
+@.sym_lstat = private unnamed_addr constant [6 x i8] c"lstat\00"
+@.sym_fstatat = private unnamed_addr constant [8 x i8] c"fstatat\00"
 
 declare ptr @"\01___error"()
 declare ptr @"\01_dlsym"(ptr, ptr)
@@ -112,6 +118,98 @@ entry:
   %is_at_fdcwd = icmp eq i32 %dirfd32, -100
   %mapped = select i1 %is_at_fdcwd, i32 -2, i32 %dirfd32
   ret i32 %mapped
+}
+
+define internal i32 @__mtrt_darwin_at_flags_from_target(i64 %flags) {
+entry:
+  %flags32 = trunc i64 %flags to i32
+  %nofollow_bits = and i32 %flags32, 256
+  %has_nofollow = icmp ne i32 %nofollow_bits, 0
+  %mapped = select i1 %has_nofollow, i32 32, i32 0
+  ret i32 %mapped
+}
+
+define internal i1 @__mtrt_darwin_at_flags_supported(i64 %flags) {
+entry:
+  %flags32 = trunc i64 %flags to i32
+  %unknown = and i32 %flags32, -257
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal void @__mtrt_darwin_store_stat64(ptr %out, ptr %native) {
+entry:
+  %dev_p = getelementptr i8, ptr %native, i64 0
+  %dev32 = load i32, ptr %dev_p, align 4
+  %dev = zext i32 %dev32 to i64
+  %mode_p = getelementptr i8, ptr %native, i64 4
+  %mode16 = load i16, ptr %mode_p, align 2
+  %mode = zext i16 %mode16 to i32
+  %nlink_p = getelementptr i8, ptr %native, i64 6
+  %nlink16 = load i16, ptr %nlink_p, align 2
+  %nlink = zext i16 %nlink16 to i64
+  %ino_p = getelementptr i8, ptr %native, i64 8
+  %ino = load i64, ptr %ino_p, align 8
+  %uid_p = getelementptr i8, ptr %native, i64 16
+  %uid = load i32, ptr %uid_p, align 4
+  %gid_p = getelementptr i8, ptr %native, i64 20
+  %gid = load i32, ptr %gid_p, align 4
+  %rdev_p = getelementptr i8, ptr %native, i64 24
+  %rdev32 = load i32, ptr %rdev_p, align 4
+  %rdev = zext i32 %rdev32 to i64
+  %atime_sec_p = getelementptr i8, ptr %native, i64 32
+  %atime_sec = load i64, ptr %atime_sec_p, align 8
+  %atime_nsec_p = getelementptr i8, ptr %native, i64 40
+  %atime_nsec = load i64, ptr %atime_nsec_p, align 8
+  %mtime_sec_p = getelementptr i8, ptr %native, i64 48
+  %mtime_sec = load i64, ptr %mtime_sec_p, align 8
+  %mtime_nsec_p = getelementptr i8, ptr %native, i64 56
+  %mtime_nsec = load i64, ptr %mtime_nsec_p, align 8
+  %ctime_sec_p = getelementptr i8, ptr %native, i64 64
+  %ctime_sec = load i64, ptr %ctime_sec_p, align 8
+  %ctime_nsec_p = getelementptr i8, ptr %native, i64 72
+  %ctime_nsec = load i64, ptr %ctime_nsec_p, align 8
+  %size_p = getelementptr i8, ptr %native, i64 96
+  %size = load i64, ptr %size_p, align 8
+  %blocks_p = getelementptr i8, ptr %native, i64 104
+  %blocks = load i64, ptr %blocks_p, align 8
+  %blksize_p = getelementptr i8, ptr %native, i64 112
+  %blksize32 = load i32, ptr %blksize_p, align 4
+  %blksize = sext i32 %blksize32 to i64
+
+  %dev_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 0
+  store i64 %dev, ptr %dev_out, align 8
+  %ino_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 1
+  store i64 %ino, ptr %ino_out, align 8
+  %nlink_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 2
+  store i64 %nlink, ptr %nlink_out, align 8
+  %mode_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 3
+  store i32 %mode, ptr %mode_out, align 4
+  %uid_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 4
+  store i32 %uid, ptr %uid_out, align 4
+  %gid_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 5
+  store i32 %gid, ptr %gid_out, align 4
+  %rdev_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 6
+  store i64 %rdev, ptr %rdev_out, align 8
+  %size_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 7
+  store i64 %size, ptr %size_out, align 8
+  %blksize_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 8
+  store i64 %blksize, ptr %blksize_out, align 8
+  %blocks_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 9
+  store i64 %blocks, ptr %blocks_out, align 8
+  %atime_sec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 10
+  store i64 %atime_sec, ptr %atime_sec_out, align 8
+  %atime_nsec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 11
+  store i64 %atime_nsec, ptr %atime_nsec_out, align 8
+  %mtime_sec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 12
+  store i64 %mtime_sec, ptr %mtime_sec_out, align 8
+  %mtime_nsec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 13
+  store i64 %mtime_nsec, ptr %mtime_nsec_out, align 8
+  %ctime_sec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 14
+  store i64 %ctime_sec, ptr %ctime_sec_out, align 8
+  %ctime_nsec_out = getelementptr inbounds %struct.mtrt_stat64, ptr %out, i32 0, i32 15
+  store i64 %ctime_nsec, ptr %ctime_nsec_out, align 8
+  ret void
 }
 
 define i64 @__mtrt_host_getpid() {
@@ -548,5 +646,111 @@ entry:
   %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_symlinkat)
   %r = call i32 %sym(ptr %target, i32 %newdirfd32, ptr %linkpath)
   %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_stat(ptr %path, ptr %buf) {
+entry:
+  %is_null = icmp eq ptr %buf, null
+  br i1 %is_null, label %fault, label %call_stat
+
+fault:
+  ret i64 -14
+
+call_stat:
+  %native = alloca [144 x i8], align 8
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_stat)
+  %r = call i32 %sym(ptr %path, ptr %native)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  %ok = icmp eq i64 %mapped, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
+  ret i64 0
+
+done:
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_fstat(i64 %fd, ptr %buf) {
+entry:
+  %is_null = icmp eq ptr %buf, null
+  br i1 %is_null, label %fault, label %call_fstat
+
+fault:
+  ret i64 -14
+
+call_fstat:
+  %fd32 = trunc i64 %fd to i32
+  %native = alloca [144 x i8], align 8
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_fstat)
+  %r = call i32 %sym(i32 %fd32, ptr %native)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  %ok = icmp eq i64 %mapped, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
+  ret i64 0
+
+done:
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
+entry:
+  %is_null = icmp eq ptr %buf, null
+  br i1 %is_null, label %fault, label %call_lstat
+
+fault:
+  ret i64 -14
+
+call_lstat:
+  %native = alloca [144 x i8], align 8
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_lstat)
+  %r = call i32 %sym(ptr %path, ptr %native)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  %ok = icmp eq i64 %mapped, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
+  ret i64 0
+
+done:
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
+entry:
+  %is_null = icmp eq ptr %buf, null
+  br i1 %is_null, label %fault, label %check_flags
+
+fault:
+  ret i64 -14
+
+check_flags:
+  %flags_ok = call i1 @__mtrt_darwin_at_flags_supported(i64 %flags)
+  br i1 %flags_ok, label %call_fstatat, label %invalid
+
+invalid:
+  ret i64 -22
+
+call_fstatat:
+  %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
+  %flags32 = call i32 @__mtrt_darwin_at_flags_from_target(i64 %flags)
+  %native = alloca [144 x i8], align 8
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_fstatat)
+  %r = call i32 %sym(i32 %dirfd32, ptr %path, ptr %native, i32 %flags32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  %ok = icmp eq i64 %mapped, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
+  ret i64 0
+
+done:
   ret i64 %mapped
 }

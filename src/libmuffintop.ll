@@ -5,6 +5,7 @@
 target triple = "x86_64-unknown-linux-gnu"
 
 %struct.timespec = type { i64, i64 }
+%struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
 ; Current compatibility scaffold only. Target ABI returns negative errno values.
 @mtrt_errno = global i32 0, align 4
@@ -56,6 +57,10 @@ declare i64 @__mtrt_host_renameat(i64, ptr, i64, ptr)
 declare i64 @__mtrt_host_rmdir(ptr)
 declare i64 @__mtrt_host_symlink(ptr, ptr)
 declare i64 @__mtrt_host_symlinkat(ptr, i64, ptr)
+declare i64 @__mtrt_host_stat(ptr, ptr)
+declare i64 @__mtrt_host_fstat(i64, ptr)
+declare i64 @__mtrt_host_lstat(ptr, ptr)
+declare i64 @__mtrt_host_fstatat(i64, ptr, ptr, i64)
 
 define ptr @__errno_location() {
 entry:
@@ -457,16 +462,21 @@ entry:
   ret i64 %r
 }
 
-define i64 @fstat(...) {
+define i32 @fstat(i32 %fd, ptr %buf) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_fstat(i64 %fd64, ptr %buf)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @fstatat(...) {
+define i32 @fstatat(i32 %dirfd, ptr %path, ptr %buf, i32 %flags) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %dirfd64 = sext i32 %dirfd to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_fstatat(i64 %dirfd64, ptr %path, ptr %buf, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @fsync(...) {
@@ -522,10 +532,11 @@ entry:
   ret i64 %r
 }
 
-define i64 @lstat(...) {
+define i32 @lstat(ptr %path, ptr %buf) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_lstat(ptr %path, ptr %buf)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @madvise(...) {
@@ -900,10 +911,11 @@ done_orig:
   ret i64 %seconds
 }
 
-define i64 @stat(...) {
+define i32 @stat(ptr %path, ptr %buf) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_stat(ptr %path, ptr %buf)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @strftime(...) {
