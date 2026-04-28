@@ -1,6 +1,6 @@
 ; libmuffintop public LLVM IR ABI surface.
 ; Public names are POSIX-derived, but the target ABI is not the C POSIX ABI.
-; Current scaffold code still translates some host errors through mtrt_errno.
+; Target-aligned primitives return negative POSIX errno values directly.
 
 target triple = "x86_64-unknown-linux-gnu"
 
@@ -26,46 +26,24 @@ entry:
   ret ptr @mtrt_errno
 }
 
-define internal i64 @__mtrt_raw_to_posix_i64(i64 %raw) {
-entry:
-  %is_neg = icmp slt i64 %raw, 0
-  br i1 %is_neg, label %neg, label %ok
-
-neg:
-  %err64 = sub i64 0, %raw
-  %err = trunc i64 %err64 to i32
-  store i32 %err, ptr @mtrt_errno, align 4
-  ret i64 -1
-
-ok:
-  ret i64 %raw
-}
-
-define internal i32 @__mtrt_raw_to_posix_i32(i64 %raw) {
-entry:
-  %mapped = call i64 @__mtrt_raw_to_posix_i64(i64 %raw)
-  %ret = trunc i64 %mapped to i32
-  ret i32 %ret
-}
-
 define i32 @getpid() {
 entry:
   %raw = call i64 @__mtrt_host_getpid()
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
 define i32 @getppid() {
 entry:
   %raw = call i64 @__mtrt_host_getppid()
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
 define i32 @fork() {
 entry:
   %raw = call i64 @__mtrt_host_fork()
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
@@ -74,7 +52,7 @@ entry:
   %pid64 = sext i32 %pid to i64
   %opt64 = sext i32 %options to i64
   %raw = call i64 @__mtrt_host_wait4(i64 %pid64, ptr %status, i64 %opt64)
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
@@ -89,30 +67,28 @@ define i64 @write(i32 %fd, ptr %buf, i64 %count) {
 entry:
   %fd64 = sext i32 %fd to i64
   %raw = call i64 @__mtrt_host_write(i64 %fd64, ptr %buf, i64 %count)
-  %ret = call i64 @__mtrt_raw_to_posix_i64(i64 %raw)
-  ret i64 %ret
+  ret i64 %raw
 }
 
 define i64 @read(i32 %fd, ptr %buf, i64 %count) {
 entry:
   %fd64 = sext i32 %fd to i64
   %raw = call i64 @__mtrt_host_read(i64 %fd64, ptr %buf, i64 %count)
-  %ret = call i64 @__mtrt_raw_to_posix_i64(i64 %raw)
-  ret i64 %ret
+  ret i64 %raw
 }
 
 define i32 @close(i32 %fd) {
 entry:
   %fd64 = sext i32 %fd to i64
   %raw = call i64 @__mtrt_host_close(i64 %fd64)
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
 define i32 @nanosleep(ptr %req, ptr %rem) {
 entry:
   %raw = call i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem)
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
@@ -120,7 +96,7 @@ define i32 @clock_gettime(i32 %clockid, ptr %tp) {
 entry:
   %cid64 = sext i32 %clockid to i64
   %raw = call i64 @__mtrt_host_clock_gettime(i64 %cid64, ptr %tp)
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 
@@ -129,7 +105,7 @@ entry:
   %pid64 = sext i32 %pid to i64
   %sig64 = sext i32 %sig to i64
   %raw = call i64 @__mtrt_host_kill(i64 %pid64, i64 %sig64)
-  %ret = call i32 @__mtrt_raw_to_posix_i32(i64 %raw)
+  %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
 ; Current ENOSYS stubs for exported symbols not yet classified or host-wired.
@@ -775,9 +751,7 @@ loop:
   br i1 %ok, label %done_zero, label %check_intr
 
 check_intr:
-  %ep = call ptr @__errno_location()
-  %ev = load i32, ptr %ep, align 4
-  %is_eintr = icmp eq i32 %ev, 4
+  %is_eintr = icmp eq i32 %rc, -4
   br i1 %is_eintr, label %continue, label %done_orig
 
 continue:
@@ -841,7 +815,8 @@ ret:
   ret i64 %sec
 
 fail:
-  ret i64 -1
+  %err = sext i32 %rc to i64
+  ret i64 %err
 }
 
 define i64 @times(...) {
@@ -874,8 +849,7 @@ entry:
   br i1 %too_large, label %einval, label %do_sleep
 
 einval:
-  store i32 22, ptr @mtrt_errno, align 4
-  ret i64 -1
+  ret i64 -22
 
 do_sleep:
   %req = alloca %struct.timespec, align 8
