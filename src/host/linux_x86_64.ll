@@ -43,6 +43,12 @@ entry:
   ret i64 %ret
 }
 
+define internal i64 @__mtrt_linux_syscall6(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5, i64 %a6) {
+entry:
+  %ret = call i64 asm sideeffect "syscall", "={rax},{rax},{rdi},{rsi},{rdx},{r10},{r8},{r9},~{rcx},~{r11},~{memory}"(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5, i64 %a6)
+  ret i64 %ret
+}
+
 define internal i64 @__mtrt_linux_makedev(i32 %major32, i32 %minor32) {
 entry:
   %major = zext i32 %major32 to i64
@@ -457,5 +463,208 @@ define i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
 
 define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
   %r = call i64 @__mtrt_linux_statx_to_target(i64 %dirfd, ptr %path, i64 %flags, ptr %buf)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_brk(i64 %addr) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 12, i64 %addr)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 92, i64 %path_i, i64 %uid, i64 %gid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
+  %tp_i = ptrtoint ptr %tp to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 229, i64 %clockid, i64 %tp_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
+  %tp_i = ptrtoint ptr %tp to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 227, i64 %clockid, i64 %tp_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
+  %path_i = ptrtoint ptr %path to i64
+  %argv_i = ptrtoint ptr %argv to i64
+  %envp_i = ptrtoint ptr %envp to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 59, i64 %path_i, i64 %argv_i, i64 %envp_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchown(i64 %fd, i64 %uid, i64 %gid) {
+  %r = call i64 @__mtrt_linux_syscall3(i64 93, i64 %fd, i64 %uid, i64 %gid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 %flags) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall5(i64 260, i64 %dirfd, i64 %path_i, i64 %uid, i64 %gid, i64 %flags)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
+  %r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %cmd, i64 %arg)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fdatasync(i64 %fd) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 75, i64 %fd)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fsync(i64 %fd) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 74, i64 %fd)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getcwd(ptr %buf, i64 %size) {
+entry:
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 79, i64 %buf_i, i64 %size)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %done, label %success
+
+success:
+  %ret = ptrtoint ptr %buf to i64
+  ret i64 %ret
+
+done:
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_gettimeofday(ptr %tv, ptr %tz) {
+  %tv_i = ptrtoint ptr %tv to i64
+  %tz_i = ptrtoint ptr %tz to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 96, i64 %tv_i, i64 %tz_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 94, i64 %path_i, i64 %uid, i64 %gid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
+  %r = call i64 @__mtrt_linux_syscall3(i64 28, i64 %addr, i64 %length, i64 %advice)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
+  %r = call i64 @__mtrt_linux_syscall2(i64 149, i64 %addr, i64 %length)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mlockall(i64 %flags) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 151, i64 %flags)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
+  %r = call i64 @__mtrt_linux_syscall6(i64 9, i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
+  %r = call i64 @__mtrt_linux_syscall3(i64 10, i64 %addr, i64 %length, i64 %prot)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
+  %r = call i64 @__mtrt_linux_syscall3(i64 26, i64 %addr, i64 %length, i64 %flags)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
+  %r = call i64 @__mtrt_linux_syscall2(i64 150, i64 %addr, i64 %length)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_munlockall() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 152)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
+  %r = call i64 @__mtrt_linux_syscall2(i64 11, i64 %addr, i64 %length)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_pause() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 34)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
+  %fds_i = ptrtoint ptr %fds to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 293, i64 %fds_i, i64 %flags)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sched_yield() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 24)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
+  %act_i = ptrtoint ptr %act to i64
+  %oldact_i = ptrtoint ptr %oldact to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 13, i64 %sig, i64 %act_i, i64 %oldact_i, i64 8)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
+  %ss_i = ptrtoint ptr %ss to i64
+  %old_i = ptrtoint ptr %old_ss to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 131, i64 %ss_i, i64 %old_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigpending(ptr %sigset) {
+  %sigset_i = ptrtoint ptr %sigset to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 127, i64 %sigset_i, i64 8)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
+  %set_i = ptrtoint ptr %set to i64
+  %oldset_i = ptrtoint ptr %oldset to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 14, i64 %how, i64 %set_i, i64 %oldset_i, i64 8)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
+  %sigmask_i = ptrtoint ptr %sigmask to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 130, i64 %sigmask_i, i64 8)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
+  %set_i = ptrtoint ptr %set to i64
+  %info_i = ptrtoint ptr %info to i64
+  %timeout_i = ptrtoint ptr %timeout to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 128, i64 %set_i, i64 %info_i, i64 %timeout_i, i64 8)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
+  %r = call i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr null)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_times(ptr %buf) {
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall1(i64 100, i64 %buf_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_vfork() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 58)
   ret i64 %r
 }

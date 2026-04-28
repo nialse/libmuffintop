@@ -61,6 +61,40 @@ declare i64 @__mtrt_host_stat(ptr, ptr)
 declare i64 @__mtrt_host_fstat(i64, ptr)
 declare i64 @__mtrt_host_lstat(ptr, ptr)
 declare i64 @__mtrt_host_fstatat(i64, ptr, ptr, i64)
+declare i64 @__mtrt_host_brk(i64)
+declare i64 @__mtrt_host_chown(ptr, i64, i64)
+declare i64 @__mtrt_host_clock_getres(i64, ptr)
+declare i64 @__mtrt_host_clock_settime(i64, ptr)
+declare i64 @__mtrt_host_execve(ptr, ptr, ptr)
+declare i64 @__mtrt_host_fchown(i64, i64, i64)
+declare i64 @__mtrt_host_fchownat(i64, ptr, i64, i64, i64)
+declare i64 @__mtrt_host_fcntl(i64, i64, i64)
+declare i64 @__mtrt_host_fdatasync(i64)
+declare i64 @__mtrt_host_fsync(i64)
+declare i64 @__mtrt_host_getcwd(ptr, i64)
+declare i64 @__mtrt_host_gettimeofday(ptr, ptr)
+declare i64 @__mtrt_host_lchown(ptr, i64, i64)
+declare i64 @__mtrt_host_madvise(i64, i64, i64)
+declare i64 @__mtrt_host_mlock(i64, i64)
+declare i64 @__mtrt_host_mlockall(i64)
+declare i64 @__mtrt_host_mmap(i64, i64, i64, i64, i64, i64)
+declare i64 @__mtrt_host_mprotect(i64, i64, i64)
+declare i64 @__mtrt_host_msync(i64, i64, i64)
+declare i64 @__mtrt_host_munlock(i64, i64)
+declare i64 @__mtrt_host_munlockall()
+declare i64 @__mtrt_host_munmap(i64, i64)
+declare i64 @__mtrt_host_pause()
+declare i64 @__mtrt_host_pipe2(ptr, i64)
+declare i64 @__mtrt_host_sched_yield()
+declare i64 @__mtrt_host_sigaction(i64, ptr, ptr)
+declare i64 @__mtrt_host_sigaltstack(ptr, ptr)
+declare i64 @__mtrt_host_sigpending(ptr)
+declare i64 @__mtrt_host_sigprocmask(i64, ptr, ptr)
+declare i64 @__mtrt_host_sigsuspend(ptr)
+declare i64 @__mtrt_host_sigtimedwait(ptr, ptr, ptr)
+declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
+declare i64 @__mtrt_host_times(ptr)
+declare i64 @__mtrt_host_vfork()
 
 define ptr @__errno_location() {
 entry:
@@ -366,28 +400,35 @@ entry:
   ret i64 %r
 }
 
-define i64 @brk(...) {
+define i64 @brk(i64 %addr) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_brk(i64 %addr)
+  ret i64 %raw
 }
 
-define i64 @chown(...) {
+define i32 @chown(ptr %path, i32 %uid, i32 %gid) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %uid64 = sext i32 %uid to i64
+  %gid64 = sext i32 %gid to i64
+  %raw = call i64 @__mtrt_host_chown(ptr %path, i64 %uid64, i64 %gid64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @clock_getres(...) {
+define i32 @clock_getres(i32 %clockid, ptr %tp) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %clockid64 = sext i32 %clockid to i64
+  %raw = call i64 @__mtrt_host_clock_getres(i64 %clockid64, ptr %tp)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @clock_settime(...) {
+define i32 @clock_settime(i32 %clockid, ptr %tp) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %clockid64 = sext i32 %clockid to i64
+  %raw = call i64 @__mtrt_host_clock_settime(i64 %clockid64, ptr %tp)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @closedir(...) {
@@ -414,10 +455,11 @@ entry:
   ret i64 %r
 }
 
-define i64 @execve(...) {
+define i32 @execve(ptr %path, ptr %argv, ptr %envp) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @execvp(...) {
@@ -432,28 +474,41 @@ entry:
   unreachable
 }
 
-define i64 @fchown(...) {
+define i32 @fchown(i32 %fd, i32 %uid, i32 %gid) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %fd64 = sext i32 %fd to i64
+  %uid64 = sext i32 %uid to i64
+  %gid64 = sext i32 %gid to i64
+  %raw = call i64 @__mtrt_host_fchown(i64 %fd64, i64 %uid64, i64 %gid64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @fchownat(...) {
+define i32 @fchownat(i32 %dirfd, ptr %path, i32 %uid, i32 %gid, i32 %flags) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %dirfd64 = sext i32 %dirfd to i64
+  %uid64 = sext i32 %uid to i64
+  %gid64 = sext i32 %gid to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_fchownat(i64 %dirfd64, ptr %path, i64 %uid64, i64 %gid64, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @fcntl(...) {
+define i64 @fcntl(i32 %fd, i32 %cmd, i64 %arg) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %fd64 = sext i32 %fd to i64
+  %cmd64 = sext i32 %cmd to i64
+  %raw = call i64 @__mtrt_host_fcntl(i64 %fd64, i64 %cmd64, i64 %arg)
+  ret i64 %raw
 }
 
-define i64 @fdatasync(...) {
+define i32 @fdatasync(i32 %fd) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_fdatasync(i64 %fd64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @fdopendir(...) {
@@ -479,22 +534,25 @@ entry:
   ret i32 %ret
 }
 
-define i64 @fsync(...) {
+define i32 @fsync(i32 %fd) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_fsync(i64 %fd64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @getcwd(...) {
+define i64 @getcwd(ptr %buf, i64 %size) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_getcwd(ptr %buf, i64 %size)
+  ret i64 %raw
 }
 
-define i64 @gettimeofday(...) {
+define i32 @gettimeofday(ptr %tv, ptr %tz) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_gettimeofday(ptr %tv, ptr %tz)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @gmtime_r(...) {
@@ -503,10 +561,13 @@ entry:
   ret i64 %r
 }
 
-define i64 @lchown(...) {
+define i32 @lchown(ptr %path, i32 %uid, i32 %gid) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %uid64 = sext i32 %uid to i64
+  %gid64 = sext i32 %gid to i64
+  %raw = call i64 @__mtrt_host_lchown(ptr %path, i64 %uid64, i64 %gid64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i32 @link(ptr %oldpath, ptr %newpath) {
@@ -539,10 +600,12 @@ entry:
   ret i32 %ret
 }
 
-define i64 @madvise(...) {
+define i32 @madvise(i64 %addr, i64 %length, i32 %advice) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %advice64 = sext i32 %advice to i64
+  %raw = call i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i32 @mkdir(ptr %path, i32 %mode) {
@@ -574,52 +637,65 @@ entry:
   ret i64 %r
 }
 
-define i64 @mlock(...) {
+define i32 @mlock(i64 %addr, i64 %length) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_mlock(i64 %addr, i64 %length)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @mlockall(...) {
+define i32 @mlockall(i32 %flags) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_mlockall(i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @mmap(...) {
+define i64 @mmap(i64 %addr, i64 %length, i32 %prot, i32 %flags, i32 %fd, i64 %offset) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %prot64 = sext i32 %prot to i64
+  %flags64 = sext i32 %flags to i64
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot64, i64 %flags64, i64 %fd64, i64 %offset)
+  ret i64 %raw
 }
 
-define i64 @mprotect(...) {
+define i32 @mprotect(i64 %addr, i64 %length, i32 %prot) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %prot64 = sext i32 %prot to i64
+  %raw = call i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @msync(...) {
+define i32 @msync(i64 %addr, i64 %length, i32 %flags) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @munlock(...) {
+define i32 @munlock(i64 %addr, i64 %length) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_munlock(i64 %addr, i64 %length)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @munlockall(...) {
+define i32 @munlockall() {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_munlockall()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @munmap(...) {
+define i32 @munmap(i64 %addr, i64 %length) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_munmap(i64 %addr, i64 %length)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @opendir(...) {
@@ -628,16 +704,19 @@ entry:
   ret i64 %r
 }
 
-define i64 @pause(...) {
+define i32 @pause() {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_pause()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @pipe2(...) {
+define i32 @pipe2(ptr %fds, i32 %flags) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @posix_memalign(...) {
@@ -814,22 +893,26 @@ entry:
   ret i64 %r
 }
 
-define i64 @sched_yield(...) {
+define i32 @sched_yield() {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_sched_yield()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @sigaction(...) {
+define i32 @sigaction(i32 %sig, ptr %act, ptr %oldact) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %sig64 = sext i32 %sig to i64
+  %raw = call i64 @__mtrt_host_sigaction(i64 %sig64, ptr %act, ptr %oldact)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @sigaltstack(...) {
+define i32 @sigaltstack(ptr %ss, ptr %old_ss) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @signal(...) {
@@ -838,28 +921,33 @@ entry:
   ret i64 %r
 }
 
-define i64 @sigpending(...) {
+define i32 @sigpending(ptr %sigset) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_sigpending(ptr %sigset)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @sigprocmask(...) {
+define i32 @sigprocmask(i32 %how, ptr %set, ptr %oldset) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %how64 = sext i32 %how to i64
+  %raw = call i64 @__mtrt_host_sigprocmask(i64 %how64, ptr %set, ptr %oldset)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @sigsuspend(...) {
+define i32 @sigsuspend(ptr %sigmask) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_sigsuspend(ptr %sigmask)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @sigtimedwait(...) {
+define i32 @sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @sigwait(...) {
@@ -868,10 +956,11 @@ entry:
   ret i64 %r
 }
 
-define i64 @sigwaitinfo(...) {
+define i32 @sigwaitinfo(ptr %set, ptr %info) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @sleep(i64 %seconds) {
@@ -964,10 +1053,10 @@ fail:
   ret i64 %err
 }
 
-define i64 @times(...) {
+define i64 @times(ptr %buf) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_times(ptr %buf)
+  ret i64 %raw
 }
 
 define i64 @usleep(i64 %usec) {
@@ -990,10 +1079,11 @@ do_sleep:
   ret i64 %ret
 }
 
-define i64 @vfork(...) {
+define i32 @vfork() {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_vfork()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @wait(...) {

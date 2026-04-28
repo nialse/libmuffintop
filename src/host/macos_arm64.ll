@@ -2,6 +2,8 @@ target triple = "arm64-apple-macosx13.0.0"
 
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
+@.mtrt_dot = private unnamed_addr constant [2 x i8] c".\00"
+
 define internal i64 @__mtrt_darwin_syscall0(i64 %nr) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $1\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},r,~{x16},~{memory},~{cc}"(i64 %nr)
@@ -38,10 +40,22 @@ entry:
   ret i64 %r
 }
 
+define internal i64 @__mtrt_darwin_syscall6(i64 %nr, i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5) {
+entry:
+  %r = call i64 asm sideeffect "mov x16, $7\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},{x1},{x2},{x3},{x4},{x5},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5, i64 %nr)
+  ret i64 %r
+}
+
 define internal i64 @__mtrt_darwin_clock_sleep_trap(i64 %clock, i64 %sleep_type, i64 %sec, i64 %nsec, ptr %rem) {
 entry:
   %rem_i = ptrtoint ptr %rem to i64
   %r = call i64 asm sideeffect "mov x16, #-62\0A svc #0x80", "={x0},{x0},{x1},{x2},{x3},{x4},~{x16},~{memory},~{cc}"(i64 %clock, i64 %sleep_type, i64 %sec, i64 %nsec, i64 %rem_i)
+  ret i64 %r
+}
+
+define internal i64 @__mtrt_darwin_swtch_trap() {
+entry:
+  %r = call i64 asm sideeffect "mov x16, #-60\0A svc #0x80", "={x0},~{x16},~{memory},~{cc}"()
   ret i64 %r
 }
 
@@ -56,6 +70,46 @@ define internal i64 @__mtrt_darwin_fork() {
 entry:
   %r = call i64 asm sideeffect "mov x16, #2\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A b 2f\0A1:\0A cbz x1, 2f\0A mov x0, #0\0A2:", "={x0},~{x1},~{x16},~{memory},~{cc}"()
   ret i64 %r
+}
+
+define internal i64 @__mtrt_strlen(ptr %s) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %cont ]
+  %p = getelementptr i8, ptr %s, i64 %i
+  %c = load i8, ptr %p, align 1
+  %is_zero = icmp eq i8 %c, 0
+  br i1 %is_zero, label %done, label %cont
+
+cont:
+  %next = add i64 %i, 1
+  br label %loop
+
+done:
+  ret i64 %i
+}
+
+define internal void @__mtrt_copy_cstr(ptr %dst, ptr %src, i64 %len) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %copy ]
+  %done = icmp ugt i64 %i, %len
+  br i1 %done, label %ret, label %copy
+
+copy:
+  %sp = getelementptr i8, ptr %src, i64 %i
+  %dp = getelementptr i8, ptr %dst, i64 %i
+  %c = load i8, ptr %sp, align 1
+  store i8 %c, ptr %dp, align 1
+  %next = add i64 %i, 1
+  br label %loop
+
+ret:
+  ret void
 }
 
 define internal i32 @__mtrt_darwin_open_flags_from_target(i32 %flags) {
@@ -77,6 +131,26 @@ entry:
   %has_append = icmp ne i32 %append_bits, 0
   %append_value = select i1 %has_append, i32 8, i32 0
   %mapped = or i32 %with_trunc, %append_value
+  ret i32 %mapped
+}
+
+define internal i32 @__mtrt_darwin_mmap_flags_from_target(i32 %flags) {
+entry:
+  %anon_bits = and i32 %flags, 32
+  %has_anon = icmp ne i32 %anon_bits, 0
+  %without_anon = and i32 %flags, -33
+  %anon_value = select i1 %has_anon, i32 4096, i32 0
+  %mapped = or i32 %without_anon, %anon_value
+  ret i32 %mapped
+}
+
+define internal i32 @__mtrt_darwin_msync_flags_from_target(i32 %flags) {
+entry:
+  %sync_bits = and i32 %flags, 4
+  %has_sync = icmp ne i32 %sync_bits, 0
+  %without_sync = and i32 %flags, -5
+  %sync_value = select i1 %has_sync, i32 16, i32 0
+  %mapped = or i32 %without_sync, %sync_value
   ret i32 %mapped
 }
 
@@ -149,6 +223,33 @@ check_follow:
 
 follow:
   ret i32 64
+
+invalid:
+  ret i32 -1
+}
+
+define internal i32 @__mtrt_darwin_sigprocmask_how_from_target(i64 %how) {
+entry:
+  %how32 = trunc i64 %how to i32
+  %is_block = icmp eq i32 %how32, 0
+  br i1 %is_block, label %block, label %check_unblock
+
+block:
+  ret i32 1
+
+check_unblock:
+  %is_unblock = icmp eq i32 %how32, 1
+  br i1 %is_unblock, label %unblock, label %check_setmask
+
+unblock:
+  ret i32 2
+
+check_setmask:
+  %is_setmask = icmp eq i32 %how32, 2
+  br i1 %is_setmask, label %setmask, label %invalid
+
+setmask:
+  ret i32 3
 
 invalid:
   ret i32 -1
@@ -802,4 +903,335 @@ store:
 
 done:
   ret i64 %r
+}
+
+define i64 @__mtrt_host_brk(i64 %addr) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
+entry:
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 16, i64 %path_i, i64 %uid, i64 %gid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
+entry:
+  %path_i = ptrtoint ptr %path to i64
+  %argv_i = ptrtoint ptr %argv to i64
+  %envp_i = ptrtoint ptr %envp to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 59, i64 %path_i, i64 %argv_i, i64 %envp_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchown(i64 %fd, i64 %uid, i64 %gid) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall3(i64 123, i64 %fd, i64 %uid, i64 %gid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 %flags) {
+entry:
+  %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
+  %flags_ok = call i1 @__mtrt_darwin_at_flags_supported(i64 %flags)
+  br i1 %flags_ok, label %call_fchownat, label %invalid
+
+invalid:
+  ret i64 -22
+
+call_fchownat:
+  %flags32 = call i32 @__mtrt_darwin_at_flags_from_target(i64 %flags)
+  %dirfd64 = sext i32 %dirfd32 to i64
+  %path_i = ptrtoint ptr %path to i64
+  %flags64 = sext i32 %flags32 to i64
+  %r = call i64 @__mtrt_darwin_syscall5(i64 468, i64 %dirfd64, i64 %path_i, i64 %uid, i64 %gid, i64 %flags64)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall3(i64 92, i64 %fd, i64 %cmd, i64 %arg)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fdatasync(i64 %fd) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall1(i64 187, i64 %fd)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fsync(i64 %fd) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall1(i64 95, i64 %fd)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getcwd(ptr %buf, i64 %size) {
+entry:
+  %is_null = icmp eq ptr %buf, null
+  br i1 %is_null, label %fault, label %check_size
+
+fault:
+  ret i64 -14
+
+check_size:
+  %zero_size = icmp eq i64 %size, 0
+  br i1 %zero_size, label %invalid, label %open_dot
+
+invalid:
+  ret i64 -22
+
+open_dot:
+  %tmp = alloca [1024 x i8], align 16
+  %tmp_p = getelementptr inbounds [1024 x i8], ptr %tmp, i64 0, i64 0
+  %dot_i = ptrtoint ptr @.mtrt_dot to i64
+  %fd = call i64 @__mtrt_darwin_syscall3(i64 5, i64 %dot_i, i64 0, i64 0)
+  %open_bad = icmp slt i64 %fd, 0
+  br i1 %open_bad, label %open_done, label %call_fcntl
+
+call_fcntl:
+  %tmp_i = ptrtoint ptr %tmp_p to i64
+  %fr = call i64 @__mtrt_darwin_syscall3(i64 92, i64 %fd, i64 50, i64 %tmp_i)
+  %_close = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %fd)
+  %fcntl_bad = icmp slt i64 %fr, 0
+  br i1 %fcntl_bad, label %fcntl_done, label %measure
+
+measure:
+  %len = call i64 @__mtrt_strlen(ptr %tmp_p)
+  %need = add i64 %len, 1
+  %too_small = icmp ugt i64 %need, %size
+  br i1 %too_small, label %range, label %copy
+
+range:
+  ret i64 -34
+
+copy:
+  call void @__mtrt_copy_cstr(ptr %buf, ptr %tmp_p, i64 %len)
+  %ret = ptrtoint ptr %buf to i64
+  ret i64 %ret
+
+fcntl_done:
+  ret i64 %fr
+
+open_done:
+  ret i64 %fd
+}
+
+define i64 @__mtrt_host_gettimeofday(ptr %tv, ptr %tz) {
+entry:
+  %has_tv = icmp ne ptr %tv, null
+  br i1 %has_tv, label %with_tv, label %without_tv
+
+without_tv:
+  %tz_i0 = ptrtoint ptr %tz to i64
+  %r0 = call i64 @__mtrt_darwin_syscall2(i64 116, i64 0, i64 %tz_i0)
+  ret i64 %r0
+
+with_tv:
+  %native = alloca [16 x i8], align 8
+  %native_i = ptrtoint ptr %native to i64
+  %tz_i = ptrtoint ptr %tz to i64
+  %r = call i64 @__mtrt_darwin_syscall2(i64 116, i64 %native_i, i64 %tz_i)
+  %ok = icmp eq i64 %r, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  %sec_p = getelementptr i8, ptr %native, i64 0
+  %usec_p = getelementptr i8, ptr %native, i64 8
+  %sec = load i64, ptr %sec_p, align 8
+  %usec32 = load i32, ptr %usec_p, align 4
+  %usec = sext i32 %usec32 to i64
+  %tv_sec_p = getelementptr i8, ptr %tv, i64 0
+  %tv_usec_p = getelementptr i8, ptr %tv, i64 8
+  store i64 %sec, ptr %tv_sec_p, align 8
+  store i64 %usec, ptr %tv_usec_p, align 8
+  ret i64 0
+
+done:
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
+entry:
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 364, i64 %path_i, i64 %uid, i64 %gid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
+entry:
+  %advice32 = trunc i64 %advice to i32
+  %advice64 = sext i32 %advice32 to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 75, i64 %addr, i64 %length, i64 %advice64)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall2(i64 203, i64 %addr, i64 %length)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mlockall(i64 %flags) {
+entry:
+  %flags32 = trunc i64 %flags to i32
+  %flags64 = sext i32 %flags32 to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 324, i64 %flags64)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
+entry:
+  %prot32 = trunc i64 %prot to i32
+  %flags32 = trunc i64 %flags to i32
+  %fd32 = trunc i64 %fd to i32
+  %mapped_flags = call i32 @__mtrt_darwin_mmap_flags_from_target(i32 %flags32)
+  %prot64 = sext i32 %prot32 to i64
+  %flags64 = sext i32 %mapped_flags to i64
+  %fd64 = sext i32 %fd32 to i64
+  %r = call i64 @__mtrt_darwin_syscall6(i64 197, i64 %addr, i64 %length, i64 %prot64, i64 %flags64, i64 %fd64, i64 %offset)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
+entry:
+  %prot32 = trunc i64 %prot to i32
+  %prot64 = sext i32 %prot32 to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 74, i64 %addr, i64 %length, i64 %prot64)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
+entry:
+  %flags32 = trunc i64 %flags to i32
+  %mapped_flags = call i32 @__mtrt_darwin_msync_flags_from_target(i32 %flags32)
+  %flags64 = sext i32 %mapped_flags to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 65, i64 %addr, i64 %length, i64 %flags64)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall2(i64 204, i64 %addr, i64 %length)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_munlockall() {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall1(i64 325, i64 0)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall2(i64 73, i64 %addr, i64 %length)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_pause() {
+entry:
+  %old = alloca i32, align 4
+  %old_i = ptrtoint ptr %old to i64
+  %get_mask = call i64 @__mtrt_darwin_syscall3(i64 48, i64 1, i64 0, i64 %old_i)
+  %mask_bad = icmp slt i64 %get_mask, 0
+  br i1 %mask_bad, label %done, label %suspend
+
+suspend:
+  %mask = load i32, ptr %old, align 4
+  %mask64 = zext i32 %mask to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %mask64)
+  ret i64 %r
+
+done:
+  ret i64 %get_mask
+}
+
+define i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_sched_yield() {
+entry:
+  %r = call i64 @__mtrt_darwin_swtch_trap()
+  ret i64 0
+}
+
+define i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
+entry:
+  %act_i = ptrtoint ptr %act to i64
+  %oldact_i = ptrtoint ptr %oldact to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 46, i64 %sig, i64 %act_i, i64 %oldact_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
+entry:
+  %ss_i = ptrtoint ptr %ss to i64
+  %old_i = ptrtoint ptr %old_ss to i64
+  %r = call i64 @__mtrt_darwin_syscall2(i64 53, i64 %ss_i, i64 %old_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigpending(ptr %sigset) {
+entry:
+  %sigset_i = ptrtoint ptr %sigset to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 52, i64 %sigset_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
+entry:
+  %mapped_how = call i32 @__mtrt_darwin_sigprocmask_how_from_target(i64 %how)
+  %bad_how = icmp eq i32 %mapped_how, -1
+  br i1 %bad_how, label %invalid, label %call_sigprocmask
+
+invalid:
+  ret i64 -22
+
+call_sigprocmask:
+  %set_i = ptrtoint ptr %set to i64
+  %oldset_i = ptrtoint ptr %oldset to i64
+  %how64 = sext i32 %mapped_how to i64
+  %r = call i64 @__mtrt_darwin_syscall3(i64 48, i64 %how64, i64 %set_i, i64 %oldset_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
+entry:
+  %sigmask_i = ptrtoint ptr %sigmask to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %sigmask_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_times(ptr %buf) {
+entry:
+  ret i64 -38
+}
+
+define i64 @__mtrt_host_vfork() {
+entry:
+  ret i64 -38
 }
