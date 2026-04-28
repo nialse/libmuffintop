@@ -40,6 +40,17 @@ target triple = "arm64-apple-macosx13.0.0"
 @.sym_chmod = private unnamed_addr constant [6 x i8] c"chmod\00"
 @.sym_fchmod = private unnamed_addr constant [7 x i8] c"fchmod\00"
 @.sym_fchmodat = private unnamed_addr constant [9 x i8] c"fchmodat\00"
+@.sym_link = private unnamed_addr constant [5 x i8] c"link\00"
+@.sym_linkat = private unnamed_addr constant [7 x i8] c"linkat\00"
+@.sym_mkdir = private unnamed_addr constant [6 x i8] c"mkdir\00"
+@.sym_mkdirat = private unnamed_addr constant [8 x i8] c"mkdirat\00"
+@.sym_readlink = private unnamed_addr constant [9 x i8] c"readlink\00"
+@.sym_readlinkat = private unnamed_addr constant [11 x i8] c"readlinkat\00"
+@.sym_rename = private unnamed_addr constant [7 x i8] c"rename\00"
+@.sym_renameat = private unnamed_addr constant [9 x i8] c"renameat\00"
+@.sym_rmdir = private unnamed_addr constant [6 x i8] c"rmdir\00"
+@.sym_symlink = private unnamed_addr constant [8 x i8] c"symlink\00"
+@.sym_symlinkat = private unnamed_addr constant [10 x i8] c"symlinkat\00"
 
 declare ptr @"\01___error"()
 declare ptr @"\01_dlsym"(ptr, ptr)
@@ -438,6 +449,104 @@ entry:
   %flags32 = trunc i64 %flags to i32
   %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_fchmodat)
   %r = call i32 %sym(i32 %dirfd32, ptr %path, i32 %mode32, i32 %flags32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_link)
+  %r = call i32 %sym(ptr %oldpath, ptr %newpath)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_linkat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath, i64 %flags) {
+entry:
+  %olddirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %olddirfd)
+  %newdirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %newdirfd)
+  %flags32 = trunc i64 %flags to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_linkat)
+  %r = call i32 %sym(i32 %olddirfd32, ptr %oldpath, i32 %newdirfd32, ptr %newpath, i32 %flags32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_mkdir(ptr %path, i64 %mode) {
+entry:
+  %mode32 = trunc i64 %mode to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_mkdir)
+  %r = call i32 %sym(ptr %path, i32 %mode32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
+entry:
+  %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
+  %mode32 = trunc i64 %mode to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_mkdirat)
+  %r = call i32 %sym(i32 %dirfd32, ptr %path, i32 %mode32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_readlink)
+  %r = call i64 %sym(ptr %path, ptr %buf, i64 %size)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_readlinkat(i64 %dirfd, ptr %path, ptr %buf, i64 %size) {
+entry:
+  %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_readlinkat)
+  %r = call i64 %sym(i32 %dirfd32, ptr %path, ptr %buf, i64 %size)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_rename)
+  %r = call i32 %sym(ptr %oldpath, ptr %newpath)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_renameat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath) {
+entry:
+  %olddirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %olddirfd)
+  %newdirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %newdirfd)
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_renameat)
+  %r = call i32 %sym(i32 %olddirfd32, ptr %oldpath, i32 %newdirfd32, ptr %newpath)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_rmdir(ptr %path) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_rmdir)
+  %r = call i32 %sym(ptr %path)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_symlink)
+  %r = call i32 %sym(ptr %target, ptr %linkpath)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
+entry:
+  %newdirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %newdirfd)
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_symlinkat)
+  %r = call i32 %sym(ptr %target, i32 %newdirfd32, ptr %linkpath)
   %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
   ret i64 %mapped
 }

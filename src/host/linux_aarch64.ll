@@ -254,3 +254,77 @@ define i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
   %r = call i64 @__mtrt_linux_syscall4(i64 452, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
   ret i64 %r
 }
+
+define i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
+  %oldpath_i = ptrtoint ptr %oldpath to i64
+  %newpath_i = ptrtoint ptr %newpath to i64
+  %r = call i64 @__mtrt_linux_syscall5(i64 37, i64 -100, i64 %oldpath_i, i64 -100, i64 %newpath_i, i64 0)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_linkat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath, i64 %flags) {
+  %oldpath_i = ptrtoint ptr %oldpath to i64
+  %newpath_i = ptrtoint ptr %newpath to i64
+  %r = call i64 @__mtrt_linux_syscall5(i64 37, i64 %olddirfd, i64 %oldpath_i, i64 %newdirfd, i64 %newpath_i, i64 %flags)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mkdir(ptr %path, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 34, i64 -100, i64 %path_i, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 34, i64 %dirfd, i64 %path_i, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
+  %path_i = ptrtoint ptr %path to i64
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 78, i64 -100, i64 %path_i, i64 %buf_i, i64 %size)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_readlinkat(i64 %dirfd, ptr %path, ptr %buf, i64 %size) {
+  %path_i = ptrtoint ptr %path to i64
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 78, i64 %dirfd, i64 %path_i, i64 %buf_i, i64 %size)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath) {
+  %oldpath_i = ptrtoint ptr %oldpath to i64
+  %newpath_i = ptrtoint ptr %newpath to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 38, i64 -100, i64 %oldpath_i, i64 -100, i64 %newpath_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_renameat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath) {
+  %oldpath_i = ptrtoint ptr %oldpath to i64
+  %newpath_i = ptrtoint ptr %newpath to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 38, i64 %olddirfd, i64 %oldpath_i, i64 %newdirfd, i64 %newpath_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_rmdir(ptr %path) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 35, i64 -100, i64 %path_i, i64 512)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath) {
+  %target_i = ptrtoint ptr %target to i64
+  %linkpath_i = ptrtoint ptr %linkpath to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 36, i64 %target_i, i64 -100, i64 %linkpath_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
+  %target_i = ptrtoint ptr %target to i64
+  %linkpath_i = ptrtoint ptr %linkpath to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 36, i64 %target_i, i64 %newdirfd, i64 %linkpath_i)
+  ret i64 %r
+}

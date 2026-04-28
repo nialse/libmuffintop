@@ -45,6 +45,17 @@ declare i64 @__mtrt_host_faccessat(i64, ptr, i64, i64)
 declare i64 @__mtrt_host_chmod(ptr, i64)
 declare i64 @__mtrt_host_fchmod(i64, i64)
 declare i64 @__mtrt_host_fchmodat(i64, ptr, i64, i64)
+declare i64 @__mtrt_host_link(ptr, ptr)
+declare i64 @__mtrt_host_linkat(i64, ptr, i64, ptr, i64)
+declare i64 @__mtrt_host_mkdir(ptr, i64)
+declare i64 @__mtrt_host_mkdirat(i64, ptr, i64)
+declare i64 @__mtrt_host_readlink(ptr, ptr, i64)
+declare i64 @__mtrt_host_readlinkat(i64, ptr, ptr, i64)
+declare i64 @__mtrt_host_rename(ptr, ptr)
+declare i64 @__mtrt_host_renameat(i64, ptr, i64, ptr)
+declare i64 @__mtrt_host_rmdir(ptr)
+declare i64 @__mtrt_host_symlink(ptr, ptr)
+declare i64 @__mtrt_host_symlinkat(ptr, i64, ptr)
 
 define ptr @__errno_location() {
 entry:
@@ -488,16 +499,21 @@ entry:
   ret i64 %r
 }
 
-define i64 @link(...) {
+define i32 @link(ptr %oldpath, ptr %newpath) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @linkat(...) {
+define i32 @linkat(i32 %olddirfd, ptr %oldpath, i32 %newdirfd, ptr %newpath, i32 %flags) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %olddirfd64 = sext i32 %olddirfd to i64
+  %newdirfd64 = sext i32 %newdirfd to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_linkat(i64 %olddirfd64, ptr %oldpath, i64 %newdirfd64, ptr %newpath, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @localtime_r(...) {
@@ -518,16 +534,21 @@ entry:
   ret i64 %r
 }
 
-define i64 @mkdir(...) {
+define i32 @mkdir(ptr %path, i32 %mode) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_mkdir(ptr %path, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @mkdirat(...) {
+define i32 @mkdirat(i32 %dirfd, ptr %path, i32 %mode) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %dirfd64 = sext i32 %dirfd to i64
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_mkdirat(i64 %dirfd64, ptr %path, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @mkstemp(...) {
@@ -734,28 +755,33 @@ entry:
   ret i64 %r
 }
 
-define i64 @readlink(...) {
+define i64 @readlink(ptr %path, ptr %buf, i64 %size) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size)
+  ret i64 %raw
 }
 
-define i64 @readlinkat(...) {
+define i64 @readlinkat(i32 %dirfd, ptr %path, ptr %buf, i64 %size) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %dirfd64 = sext i32 %dirfd to i64
+  %raw = call i64 @__mtrt_host_readlinkat(i64 %dirfd64, ptr %path, ptr %buf, i64 %size)
+  ret i64 %raw
 }
 
-define i64 @rename(...) {
+define i32 @rename(ptr %oldpath, ptr %newpath) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @renameat(...) {
+define i32 @renameat(i32 %olddirfd, ptr %oldpath, i32 %newdirfd, ptr %newpath) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %olddirfd64 = sext i32 %olddirfd to i64
+  %newdirfd64 = sext i32 %newdirfd to i64
+  %raw = call i64 @__mtrt_host_renameat(i64 %olddirfd64, ptr %oldpath, i64 %newdirfd64, ptr %newpath)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @rewinddir(...) {
@@ -764,10 +790,11 @@ entry:
   ret i64 %r
 }
 
-define i64 @rmdir(...) {
+define i32 @rmdir(ptr %path) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_rmdir(ptr %path)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @sbrk(...) {
@@ -885,16 +912,19 @@ entry:
   ret i64 %r
 }
 
-define i64 @symlink(...) {
+define i32 @symlink(ptr %target, ptr %linkpath) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %raw = call i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
-define i64 @symlinkat(...) {
+define i32 @symlinkat(ptr %target, i32 %newdirfd, ptr %linkpath) {
 entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
+  %newdirfd64 = sext i32 %newdirfd to i64
+  %raw = call i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd64, ptr %linkpath)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }
 
 define i64 @time(ptr %tloc) {
