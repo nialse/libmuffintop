@@ -40,6 +40,11 @@ declare i64 @__mtrt_host_pread(i64, ptr, i64, i64)
 declare i64 @__mtrt_host_pwrite(i64, ptr, i64, i64)
 declare i64 @__mtrt_host_unlink(ptr)
 declare i64 @__mtrt_host_unlinkat(i64, ptr, i64)
+declare i64 @__mtrt_host_access(ptr, i64)
+declare i64 @__mtrt_host_faccessat(i64, ptr, i64, i64)
+declare i64 @__mtrt_host_chmod(ptr, i64)
+declare i64 @__mtrt_host_fchmod(i64, i64)
+declare i64 @__mtrt_host_fchmodat(i64, ptr, i64, i64)
 
 define ptr @__errno_location() {
 entry:
@@ -287,17 +292,56 @@ entry:
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
+
+define i32 @access(ptr %path, i32 %mode) {
+entry:
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_access(ptr %path, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @faccessat(i32 %dirfd, ptr %path, i32 %mode, i32 %flags) {
+entry:
+  %dirfd64 = sext i32 %dirfd to i64
+  %mode64 = sext i32 %mode to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_faccessat(i64 %dirfd64, ptr %path, i64 %mode64, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @chmod(ptr %path, i32 %mode) {
+entry:
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_chmod(ptr %path, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @fchmod(i32 %fd, i32 %mode) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_fchmod(i64 %fd64, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @fchmodat(i32 %dirfd, ptr %path, i32 %mode, i32 %flags) {
+entry:
+  %dirfd64 = sext i32 %dirfd to i64
+  %mode64 = sext i32 %mode to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_fchmodat(i64 %dirfd64, ptr %path, i64 %mode64, i64 %flags64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
 ; Current ENOSYS stubs for exported symbols not yet classified or host-wired.
 define internal i64 @__muffintop_enosys_i64() {
 entry:
   store i32 38, ptr @mtrt_errno, align 4
   ret i64 -1
-}
-
-define i64 @access(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i64 @alarm(...) {
@@ -307,12 +351,6 @@ entry:
 }
 
 define i64 @brk(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @chmod(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
   ret i64 %r
@@ -376,24 +414,6 @@ define void @exit(i32 %status) {
 entry:
   call void @_exit(i32 %status)
   unreachable
-}
-
-define i64 @faccessat(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @fchmod(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @fchmodat(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i64 @fchown(...) {

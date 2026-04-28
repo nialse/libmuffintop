@@ -203,3 +203,32 @@ define i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
   %r = call i64 @__mtrt_linux_syscall3(i64 263, i64 %dirfd, i64 %path_i, i64 %flags)
   ret i64 %r
 }
+
+define i64 @__mtrt_host_access(ptr %path, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 21, i64 %path_i, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_faccessat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 439, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_chmod(ptr %path, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 90, i64 %path_i, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchmod(i64 %fd, i64 %mode) {
+  %r = call i64 @__mtrt_linux_syscall2(i64 91, i64 %fd, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 452, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
+  ret i64 %r
+}
