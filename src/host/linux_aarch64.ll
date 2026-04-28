@@ -99,3 +99,70 @@ define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
   %r = call i64 @__mtrt_linux_syscall2(i64 129, i64 %pid, i64 %sig)
   ret i64 %r
 }
+
+define i64 @__mtrt_host_dup(i64 %oldfd) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 23, i64 %oldfd)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_dup2(i64 %oldfd, i64 %newfd) {
+entry:
+  %same_fd = icmp eq i64 %oldfd, %newfd
+  br i1 %same_fd, label %validate_same, label %dup3
+
+validate_same:
+  %valid = call i64 @__mtrt_linux_syscall3(i64 25, i64 %oldfd, i64 1, i64 0)
+  %is_bad = icmp slt i64 %valid, 0
+  br i1 %is_bad, label %same_bad, label %same_ok
+
+same_bad:
+  ret i64 %valid
+
+same_ok:
+  ret i64 %oldfd
+
+dup3:
+  %r = call i64 @__mtrt_linux_syscall3(i64 24, i64 %oldfd, i64 %newfd, i64 0)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_chdir(ptr %path) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall1(i64 49, i64 %path_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_fchdir(i64 %fd) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 50, i64 %fd)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getpgid(i64 %pid) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 155, i64 %pid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getpgrp() {
+  %r = call i64 @__mtrt_linux_syscall1(i64 155, i64 0)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getsid(i64 %pid) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 156, i64 %pid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_setpgid(i64 %pid, i64 %pgid) {
+  %r = call i64 @__mtrt_linux_syscall2(i64 154, i64 %pid, i64 %pgid)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_setsid() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 157)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_umask(i64 %mask) {
+  %r = call i64 @__mtrt_linux_syscall1(i64 166, i64 %mask)
+  ret i64 %r
+}

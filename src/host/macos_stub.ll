@@ -15,6 +15,16 @@ target triple = "arm64-apple-macosx13.0.0"
 @.sym_nanosleep = private unnamed_addr constant [10 x i8] c"nanosleep\00"
 @.sym_clock_gettime = private unnamed_addr constant [14 x i8] c"clock_gettime\00"
 @.sym_kill = private unnamed_addr constant [5 x i8] c"kill\00"
+@.sym_dup = private unnamed_addr constant [4 x i8] c"dup\00"
+@.sym_dup2 = private unnamed_addr constant [5 x i8] c"dup2\00"
+@.sym_chdir = private unnamed_addr constant [6 x i8] c"chdir\00"
+@.sym_fchdir = private unnamed_addr constant [7 x i8] c"fchdir\00"
+@.sym_getpgid = private unnamed_addr constant [8 x i8] c"getpgid\00"
+@.sym_getpgrp = private unnamed_addr constant [8 x i8] c"getpgrp\00"
+@.sym_getsid = private unnamed_addr constant [7 x i8] c"getsid\00"
+@.sym_setpgid = private unnamed_addr constant [8 x i8] c"setpgid\00"
+@.sym_setsid = private unnamed_addr constant [7 x i8] c"setsid\00"
+@.sym_umask = private unnamed_addr constant [6 x i8] c"umask\00"
 
 declare ptr @"\01___error"()
 declare ptr @"\01_dlsym"(ptr, ptr)
@@ -140,6 +150,95 @@ entry:
   %sig32 = trunc i64 %sig to i32
   %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_kill)
   %r = call i32 %sym(i32 %pid32, i32 %sig32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_dup(i64 %oldfd) {
+entry:
+  %oldfd32 = trunc i64 %oldfd to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_dup)
+  %r = call i32 %sym(i32 %oldfd32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_dup2(i64 %oldfd, i64 %newfd) {
+entry:
+  %oldfd32 = trunc i64 %oldfd to i32
+  %newfd32 = trunc i64 %newfd to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_dup2)
+  %r = call i32 %sym(i32 %oldfd32, i32 %newfd32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_chdir(ptr %path) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_chdir)
+  %r = call i32 %sym(ptr %path)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_fchdir(i64 %fd) {
+entry:
+  %fd32 = trunc i64 %fd to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_fchdir)
+  %r = call i32 %sym(i32 %fd32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_getpgid(i64 %pid) {
+entry:
+  %pid32 = trunc i64 %pid to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_getpgid)
+  %r = call i32 %sym(i32 %pid32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_getpgrp() {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_getpgrp)
+  %r = call i32 %sym()
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_getsid(i64 %pid) {
+entry:
+  %pid32 = trunc i64 %pid to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_getsid)
+  %r = call i32 %sym(i32 %pid32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_setpgid(i64 %pid, i64 %pgid) {
+entry:
+  %pid32 = trunc i64 %pid to i32
+  %pgid32 = trunc i64 %pgid to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_setpgid)
+  %r = call i32 %sym(i32 %pid32, i32 %pgid32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_setsid() {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_setsid)
+  %r = call i32 %sym()
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_umask(i64 %mask) {
+entry:
+  %mask32 = trunc i64 %mask to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_umask)
+  %r = call i32 %sym(i32 %mask32)
   %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
   ret i64 %mapped
 }
