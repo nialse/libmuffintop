@@ -144,3 +144,62 @@ define i64 @__mtrt_host_umask(i64 %mask) {
   %r = call i64 @__mtrt_linux_syscall1(i64 95, i64 %mask)
   ret i64 %r
 }
+
+define i64 @__mtrt_host_pipe(ptr %fds) {
+  %fds_i = ptrtoint ptr %fds to i64
+  %r = call i64 @__mtrt_linux_syscall1(i64 22, i64 %fds_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_readv(i64 %fd, ptr %iov, i64 %iovcnt) {
+  %iov_i = ptrtoint ptr %iov to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 19, i64 %fd, i64 %iov_i, i64 %iovcnt)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_writev(i64 %fd, ptr %iov, i64 %iovcnt) {
+  %iov_i = ptrtoint ptr %iov to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 20, i64 %fd, i64 %iov_i, i64 %iovcnt)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_open(ptr %path, i64 %flags, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 2, i64 %path_i, i64 %flags, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 257, i64 %dirfd, i64 %path_i, i64 %flags, i64 %mode)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
+  %r = call i64 @__mtrt_linux_syscall3(i64 8, i64 %fd, i64 %offset, i64 %whence)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 17, i64 %fd, i64 %buf_i, i64 %count, i64 %offset)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_pwrite(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall4(i64 18, i64 %fd, i64 %buf_i, i64 %count, i64 %offset)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_unlink(ptr %path) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall1(i64 87, i64 %path_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
+  %path_i = ptrtoint ptr %path to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 263, i64 %dirfd, i64 %path_i, i64 %flags)
+  ret i64 %r
+}

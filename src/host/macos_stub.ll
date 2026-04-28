@@ -25,6 +25,16 @@ target triple = "arm64-apple-macosx13.0.0"
 @.sym_setpgid = private unnamed_addr constant [8 x i8] c"setpgid\00"
 @.sym_setsid = private unnamed_addr constant [7 x i8] c"setsid\00"
 @.sym_umask = private unnamed_addr constant [6 x i8] c"umask\00"
+@.sym_pipe = private unnamed_addr constant [5 x i8] c"pipe\00"
+@.sym_readv = private unnamed_addr constant [6 x i8] c"readv\00"
+@.sym_writev = private unnamed_addr constant [7 x i8] c"writev\00"
+@.sym_open = private unnamed_addr constant [5 x i8] c"open\00"
+@.sym_openat = private unnamed_addr constant [7 x i8] c"openat\00"
+@.sym_lseek = private unnamed_addr constant [6 x i8] c"lseek\00"
+@.sym_pread = private unnamed_addr constant [6 x i8] c"pread\00"
+@.sym_pwrite = private unnamed_addr constant [7 x i8] c"pwrite\00"
+@.sym_unlink = private unnamed_addr constant [7 x i8] c"unlink\00"
+@.sym_unlinkat = private unnamed_addr constant [9 x i8] c"unlinkat\00"
 
 declare ptr @"\01___error"()
 declare ptr @"\01_dlsym"(ptr, ptr)
@@ -56,6 +66,36 @@ entry:
   %ret64 = sext i32 %ret to i64
   %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %ret64)
   ret i64 %mapped
+}
+
+define internal i32 @__mtrt_darwin_open_flags_from_target(i32 %flags) {
+entry:
+  %access = and i32 %flags, 3
+  %creat_bits = and i32 %flags, 64
+  %has_creat = icmp ne i32 %creat_bits, 0
+  %creat_value = select i1 %has_creat, i32 512, i32 0
+  %with_creat = or i32 %access, %creat_value
+  %excl_bits = and i32 %flags, 128
+  %has_excl = icmp ne i32 %excl_bits, 0
+  %excl_value = select i1 %has_excl, i32 2048, i32 0
+  %with_excl = or i32 %with_creat, %excl_value
+  %trunc_bits = and i32 %flags, 512
+  %has_trunc = icmp ne i32 %trunc_bits, 0
+  %trunc_value = select i1 %has_trunc, i32 1024, i32 0
+  %with_trunc = or i32 %with_excl, %trunc_value
+  %append_bits = and i32 %flags, 1024
+  %has_append = icmp ne i32 %append_bits, 0
+  %append_value = select i1 %has_append, i32 8, i32 0
+  %mapped = or i32 %with_trunc, %append_value
+  ret i32 %mapped
+}
+
+define internal i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd) {
+entry:
+  %dirfd32 = trunc i64 %dirfd to i32
+  %is_at_fdcwd = icmp eq i32 %dirfd32, -100
+  %mapped = select i1 %is_at_fdcwd, i32 -2, i32 %dirfd32
+  ret i32 %mapped
 }
 
 define i64 @__mtrt_host_getpid() {
@@ -239,6 +279,110 @@ entry:
   %mask32 = trunc i64 %mask to i32
   %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_umask)
   %r = call i32 %sym(i32 %mask32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_pipe(ptr %fds) {
+entry:
+  %is_null = icmp eq ptr %fds, null
+  br i1 %is_null, label %fault, label %call_pipe
+
+fault:
+  ret i64 -14
+
+call_pipe:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_pipe)
+  %r = call i32 %sym(ptr %fds)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_readv(i64 %fd, ptr %iov, i64 %iovcnt) {
+entry:
+  %fd32 = trunc i64 %fd to i32
+  %iovcnt32 = trunc i64 %iovcnt to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_readv)
+  %r = call i64 %sym(i32 %fd32, ptr %iov, i32 %iovcnt32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_writev(i64 %fd, ptr %iov, i64 %iovcnt) {
+entry:
+  %fd32 = trunc i64 %fd to i32
+  %iovcnt32 = trunc i64 %iovcnt to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_writev)
+  %r = call i64 %sym(i32 %fd32, ptr %iov, i32 %iovcnt32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_open(ptr %path, i64 %flags, i64 %mode) {
+entry:
+  %flags32 = trunc i64 %flags to i32
+  %mode32 = trunc i64 %mode to i32
+  %mapped_flags = call i32 @__mtrt_darwin_open_flags_from_target(i32 %flags32)
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_open)
+  %r = call i32 %sym(ptr %path, i32 %mapped_flags, i32 %mode32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
+entry:
+  %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
+  %flags32 = trunc i64 %flags to i32
+  %mode32 = trunc i64 %mode to i32
+  %mapped_flags = call i32 @__mtrt_darwin_open_flags_from_target(i32 %flags32)
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_openat)
+  %r = call i32 %sym(i32 %dirfd32, ptr %path, i32 %mapped_flags, i32 %mode32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
+entry:
+  %fd32 = trunc i64 %fd to i32
+  %whence32 = trunc i64 %whence to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_lseek)
+  %r = call i64 %sym(i32 %fd32, i64 %offset, i32 %whence32)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+entry:
+  %fd32 = trunc i64 %fd to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_pread)
+  %r = call i64 %sym(i32 %fd32, ptr %buf, i64 %count, i64 %offset)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_pwrite(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+entry:
+  %fd32 = trunc i64 %fd to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_pwrite)
+  %r = call i64 %sym(i32 %fd32, ptr %buf, i64 %count, i64 %offset)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i64(i64 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_unlink(ptr %path) {
+entry:
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_unlink)
+  %r = call i32 %sym(ptr %path)
+  %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
+  ret i64 %mapped
+}
+
+define i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
+entry:
+  %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
+  %flags32 = trunc i64 %flags to i32
+  %sym = call ptr @__mtrt_darwin_lookup(ptr @.sym_unlinkat)
+  %r = call i32 %sym(i32 %dirfd32, ptr %path, i32 %flags32)
   %mapped = call i64 @__mtrt_darwin_posix_to_raw_i32(i32 %r)
   ret i64 %mapped
 }

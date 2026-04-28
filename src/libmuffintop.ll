@@ -30,6 +30,16 @@ declare i64 @__mtrt_host_getsid(i64)
 declare i64 @__mtrt_host_setpgid(i64, i64)
 declare i64 @__mtrt_host_setsid()
 declare i64 @__mtrt_host_umask(i64)
+declare i64 @__mtrt_host_pipe(ptr)
+declare i64 @__mtrt_host_readv(i64, ptr, i64)
+declare i64 @__mtrt_host_writev(i64, ptr, i64)
+declare i64 @__mtrt_host_open(ptr, i64, i64)
+declare i64 @__mtrt_host_openat(i64, ptr, i64, i64)
+declare i64 @__mtrt_host_lseek(i64, i64, i64)
+declare i64 @__mtrt_host_pread(i64, ptr, i64, i64)
+declare i64 @__mtrt_host_pwrite(i64, ptr, i64, i64)
+declare i64 @__mtrt_host_unlink(ptr)
+declare i64 @__mtrt_host_unlinkat(i64, ptr, i64)
 
 define ptr @__errno_location() {
 entry:
@@ -194,6 +204,86 @@ define i32 @umask(i32 %mask) {
 entry:
   %mask64 = sext i32 %mask to i64
   %raw = call i64 @__mtrt_host_umask(i64 %mask64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @pipe(ptr %fds) {
+entry:
+  %raw = call i64 @__mtrt_host_pipe(ptr %fds)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i64 @readv(i32 %fd, ptr %iov, i32 %iovcnt) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %iovcnt64 = sext i32 %iovcnt to i64
+  %raw = call i64 @__mtrt_host_readv(i64 %fd64, ptr %iov, i64 %iovcnt64)
+  ret i64 %raw
+}
+
+define i64 @writev(i32 %fd, ptr %iov, i32 %iovcnt) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %iovcnt64 = sext i32 %iovcnt to i64
+  %raw = call i64 @__mtrt_host_writev(i64 %fd64, ptr %iov, i64 %iovcnt64)
+  ret i64 %raw
+}
+
+define i32 @open(ptr %path, i32 %flags, i32 %mode) {
+entry:
+  %flags64 = sext i32 %flags to i64
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_open(ptr %path, i64 %flags64, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @openat(i32 %dirfd, ptr %path, i32 %flags, i32 %mode) {
+entry:
+  %dirfd64 = sext i32 %dirfd to i64
+  %flags64 = sext i32 %flags to i64
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_openat(i64 %dirfd64, ptr %path, i64 %flags64, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i64 @lseek(i32 %fd, i64 %offset, i32 %whence) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %whence64 = sext i32 %whence to i64
+  %raw = call i64 @__mtrt_host_lseek(i64 %fd64, i64 %offset, i64 %whence64)
+  ret i64 %raw
+}
+
+define i64 @pread(i32 %fd, ptr %buf, i64 %count, i64 %offset) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_pread(i64 %fd64, ptr %buf, i64 %count, i64 %offset)
+  ret i64 %raw
+}
+
+define i64 @pwrite(i32 %fd, ptr %buf, i64 %count, i64 %offset) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_pwrite(i64 %fd64, ptr %buf, i64 %count, i64 %offset)
+  ret i64 %raw
+}
+
+define i32 @unlink(ptr %path) {
+entry:
+  %raw = call i64 @__mtrt_host_unlink(ptr %path)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @unlinkat(i32 %dirfd, ptr %path, i32 %flags) {
+entry:
+  %dirfd64 = sext i32 %dirfd to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_unlinkat(i64 %dirfd64, ptr %path, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
@@ -396,12 +486,6 @@ entry:
   ret i64 %r
 }
 
-define i64 @lseek(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i64 @lstat(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
@@ -486,18 +570,6 @@ entry:
   ret i64 %r
 }
 
-define i64 @open(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @openat(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i64 @opendir(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
@@ -510,12 +582,6 @@ entry:
   ret i64 %r
 }
 
-define i64 @pipe(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i64 @pipe2(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
@@ -523,12 +589,6 @@ entry:
 }
 
 define i64 @posix_memalign(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pread(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
   ret i64 %r
@@ -642,12 +702,6 @@ entry:
   ret i64 %r
 }
 
-define i64 @pwrite(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i64 @raise(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
@@ -667,12 +721,6 @@ entry:
 }
 
 define i64 @readlinkat(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @readv(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
   ret i64 %r
@@ -860,18 +908,6 @@ entry:
   ret i64 %r
 }
 
-define i64 @unlink(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @unlinkat(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i64 @usleep(i64 %usec) {
 entry:
   %too_large = icmp uge i64 %usec, 1000000
@@ -899,12 +935,6 @@ entry:
 }
 
 define i64 @wait(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @writev(...) {
 entry:
   %r = call i64 @__muffintop_enosys_i64()
   ret i64 %r
