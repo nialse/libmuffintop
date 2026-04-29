@@ -53,6 +53,19 @@ entry:
   ret i64 %r
 }
 
+define internal i64 @__mtrt_darwin_abstime_trap() {
+entry:
+  %r = call i64 asm sideeffect "mov x16, #-3\0A svc #0x80", "={x0},~{x16},~{memory},~{cc}"()
+  ret i64 %r
+}
+
+define internal i64 @__mtrt_darwin_timebase_info_trap(ptr %info) {
+entry:
+  %info_i = ptrtoint ptr %info to i64
+  %r = call i64 asm sideeffect "mov x16, #-89\0A svc #0x80", "={x0},{x0},~{x16},~{memory},~{cc}"(i64 %info_i)
+  ret i64 %r
+}
+
 define internal i64 @__mtrt_darwin_swtch_trap() {
 entry:
   %r = call i64 asm sideeffect "mov x16, #-60\0A svc #0x80", "={x0},~{x16},~{memory},~{cc}"()
@@ -255,6 +268,19 @@ invalid:
   ret i32 -1
 }
 
+define internal i64 @__mtrt_darwin_timeval_to_ticks(ptr %tv) {
+entry:
+  %sec_p = getelementptr i8, ptr %tv, i64 0
+  %usec_p = getelementptr i8, ptr %tv, i64 8
+  %sec = load i64, ptr %sec_p, align 8
+  %usec32 = load i32, ptr %usec_p, align 4
+  %usec = sext i32 %usec32 to i64
+  %sec_ticks = mul i64 %sec, 100
+  %usec_ticks = sdiv i64 %usec, 10000
+  %ticks = add i64 %sec_ticks, %usec_ticks
+  ret i64 %ticks
+}
+
 define internal i1 @__mtrt_darwin_at_flags_supported(i64 %flags) {
 entry:
   %flags32 = trunc i64 %flags to i32
@@ -426,6 +452,70 @@ done:
   ret i64 0
 
 interrupted:
+  br i1 %has_rem, label %compute_rem, label %intr_done
+
+compute_rem:
+  %now = alloca [8 x i8], align 4
+  %now_r = call i64 @__mtrt_darwin_clock_sleep_trap(i64 0, i64 1, i64 0, i64 0, ptr %now)
+  %now_ok = icmp eq i64 %now_r, 0
+  br i1 %now_ok, label %load_rem, label %intr_done
+
+load_rem:
+  %deadline_sec_p = getelementptr i8, ptr %native_rem, i64 0
+  %deadline_nsec_p = getelementptr i8, ptr %native_rem, i64 4
+  %now_sec_p = getelementptr i8, ptr %now, i64 0
+  %now_nsec_p = getelementptr i8, ptr %now, i64 4
+  %deadline_sec32 = load i32, ptr %deadline_sec_p, align 4
+  %deadline_nsec32 = load i32, ptr %deadline_nsec_p, align 4
+  %now_sec32 = load i32, ptr %now_sec_p, align 4
+  %now_nsec32 = load i32, ptr %now_nsec_p, align 4
+  %deadline_sec = zext i32 %deadline_sec32 to i64
+  %deadline_nsec = sext i32 %deadline_nsec32 to i64
+  %now_sec = zext i32 %now_sec32 to i64
+  %now_nsec = sext i32 %now_nsec32 to i64
+  %sec_before = icmp ult i64 %deadline_sec, %now_sec
+  br i1 %sec_before, label %store_zero_rem, label %check_same_sec
+
+check_same_sec:
+  %same_sec = icmp eq i64 %deadline_sec, %now_sec
+  br i1 %same_sec, label %same_sec_rem, label %future_sec_rem
+
+same_sec_rem:
+  %nsec_left = sub i64 %deadline_nsec, %now_nsec
+  %nsec_positive = icmp sgt i64 %nsec_left, 0
+  br i1 %nsec_positive, label %store_same_sec_rem, label %store_zero_rem
+
+store_same_sec_rem:
+  br label %store_rem
+
+future_sec_rem:
+  %sec_diff = sub i64 %deadline_sec, %now_sec
+  %nsec_order = icmp sge i64 %deadline_nsec, %now_nsec
+  br i1 %nsec_order, label %store_future_direct, label %store_future_borrow
+
+store_future_direct:
+  %nsec_direct = sub i64 %deadline_nsec, %now_nsec
+  br label %store_rem
+
+store_future_borrow:
+  %sec_borrow = sub i64 %sec_diff, 1
+  %nsec_plus = add i64 %deadline_nsec, 1000000000
+  %nsec_borrow = sub i64 %nsec_plus, %now_nsec
+  br label %store_rem
+
+store_zero_rem:
+  br label %store_rem
+
+store_rem:
+  %rem_sec = phi i64 [ 0, %store_same_sec_rem ], [ %sec_diff, %store_future_direct ], [ %sec_borrow, %store_future_borrow ], [ 0, %store_zero_rem ]
+  %rem_nsec = phi i64 [ %nsec_left, %store_same_sec_rem ], [ %nsec_direct, %store_future_direct ], [ %nsec_borrow, %store_future_borrow ], [ 0, %store_zero_rem ]
+  %rem_sec_p = getelementptr i8, ptr %rem, i64 0
+  %rem_nsec_p = getelementptr i8, ptr %rem, i64 8
+  store i64 %rem_sec, ptr %rem_sec_p, align 8
+  store i64 %rem_nsec, ptr %rem_nsec_p, align 8
+  br label %intr_done
+
+intr_done:
   ret i64 -4
 }
 
@@ -1047,10 +1137,7 @@ entry:
 
 define i64 @__mtrt_host_mlockall(i64 %flags) {
 entry:
-  %flags32 = trunc i64 %flags to i32
-  %flags64 = sext i32 %flags32 to i64
-  %r = call i64 @__mtrt_darwin_syscall1(i64 324, i64 %flags64)
-  ret i64 %r
+  ret i64 -38
 }
 
 define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
@@ -1091,8 +1178,7 @@ entry:
 
 define i64 @__mtrt_host_munlockall() {
 entry:
-  %r = call i64 @__mtrt_darwin_syscall1(i64 325, i64 0)
-  ret i64 %r
+  ret i64 -38
 }
 
 define i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
@@ -1189,5 +1275,75 @@ entry:
 
 define i64 @__mtrt_host_times(ptr %buf) {
 entry:
-  ret i64 -38
+  %timebase = alloca [8 x i8], align 4
+  %timebase_r = call i64 @__mtrt_darwin_timebase_info_trap(ptr %timebase)
+  %timebase_ok = icmp eq i64 %timebase_r, 0
+  br i1 %timebase_ok, label %load_timebase, label %bad_timebase
+
+bad_timebase:
+  ret i64 -22
+
+load_timebase:
+  %numer_p = getelementptr i8, ptr %timebase, i64 0
+  %denom_p = getelementptr i8, ptr %timebase, i64 4
+  %numer32 = load i32, ptr %numer_p, align 4
+  %denom32 = load i32, ptr %denom_p, align 4
+  %denom_zero = icmp eq i32 %denom32, 0
+  br i1 %denom_zero, label %bad_timebase, label %compute_elapsed
+
+compute_elapsed:
+  %abs = call i64 @__mtrt_darwin_abstime_trap()
+  %numer = zext i32 %numer32 to i64
+  %denom = zext i32 %denom32 to i64
+  %abs_q = udiv i64 %abs, %denom
+  %abs_r = urem i64 %abs, %denom
+  %ns_q = mul i64 %abs_q, %numer
+  %ns_r_mul = mul i64 %abs_r, %numer
+  %ns_r = udiv i64 %ns_r_mul, %denom
+  %ns = add i64 %ns_q, %ns_r
+  %elapsed_ticks = udiv i64 %ns, 10000000
+  %has_buf = icmp ne ptr %buf, null
+  br i1 %has_buf, label %get_self_usage, label %done
+
+get_self_usage:
+  %self = alloca [256 x i8], align 16
+  %children = alloca [256 x i8], align 16
+  %self_i = ptrtoint ptr %self to i64
+  %self_r = call i64 @__mtrt_darwin_syscall2(i64 117, i64 0, i64 %self_i)
+  %self_ok = icmp eq i64 %self_r, 0
+  br i1 %self_ok, label %get_child_usage, label %self_done
+
+get_child_usage:
+  %children_i = ptrtoint ptr %children to i64
+  %children_r = call i64 @__mtrt_darwin_syscall2(i64 117, i64 -1, i64 %children_i)
+  %children_ok = icmp eq i64 %children_r, 0
+  br i1 %children_ok, label %store_tms, label %children_done
+
+store_tms:
+  %self_utime_p = getelementptr i8, ptr %self, i64 0
+  %self_stime_p = getelementptr i8, ptr %self, i64 16
+  %children_utime_p = getelementptr i8, ptr %children, i64 0
+  %children_stime_p = getelementptr i8, ptr %children, i64 16
+  %utime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %self_utime_p)
+  %stime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %self_stime_p)
+  %cutime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %children_utime_p)
+  %cstime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %children_stime_p)
+  %utime_out = getelementptr i8, ptr %buf, i64 0
+  %stime_out = getelementptr i8, ptr %buf, i64 8
+  %cutime_out = getelementptr i8, ptr %buf, i64 16
+  %cstime_out = getelementptr i8, ptr %buf, i64 24
+  store i64 %utime_ticks, ptr %utime_out, align 8
+  store i64 %stime_ticks, ptr %stime_out, align 8
+  store i64 %cutime_ticks, ptr %cutime_out, align 8
+  store i64 %cstime_ticks, ptr %cstime_out, align 8
+  br label %done
+
+self_done:
+  ret i64 %self_r
+
+children_done:
+  ret i64 %children_r
+
+done:
+  ret i64 %elapsed_ticks
 }
