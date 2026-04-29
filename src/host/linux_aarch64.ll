@@ -172,6 +172,150 @@ done:
   ret i64 %r
 }
 
+define internal i8 @__mtrt_common_dtype(i8 %dtype) {
+entry:
+  switch i8 %dtype, label %unknown [
+    i8 1, label %known
+    i8 2, label %known
+    i8 4, label %known
+    i8 6, label %known
+    i8 8, label %known
+    i8 10, label %known
+    i8 12, label %known
+  ]
+
+known:
+  ret i8 %dtype
+
+unknown:
+  ret i8 0
+}
+
+define internal i64 @__mtrt_name_len_bounded(ptr %name, i64 %limit) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %cont ]
+  %at_limit = icmp uge i64 %i, %limit
+  br i1 %at_limit, label %done, label %check
+
+check:
+  %p = getelementptr i8, ptr %name, i64 %i
+  %c = load i8, ptr %p, align 1
+  %is_zero = icmp eq i8 %c, 0
+  br i1 %is_zero, label %done, label %cont
+
+cont:
+  %next = add i64 %i, 1
+  br label %loop
+
+done:
+  ret i64 %i
+}
+
+define internal void @__mtrt_store_dent64(ptr %dst, i64 %ino, i64 %reclen, i8 %dtype, ptr %name, i64 %name_len) {
+entry:
+  store i64 %ino, ptr %dst, align 8
+  %reclen_p = getelementptr i8, ptr %dst, i64 8
+  %reclen32 = trunc i64 %reclen to i32
+  store i32 %reclen32, ptr %reclen_p, align 4
+  %dtype_p = getelementptr i8, ptr %dst, i64 12
+  store i8 %dtype, ptr %dtype_p, align 1
+  %pad0_p = getelementptr i8, ptr %dst, i64 13
+  store i8 0, ptr %pad0_p, align 1
+  %pad1_p = getelementptr i8, ptr %dst, i64 14
+  store i8 0, ptr %pad1_p, align 1
+  %pad2_p = getelementptr i8, ptr %dst, i64 15
+  store i8 0, ptr %pad2_p, align 1
+  %first_pad = add i64 %name_len, 17
+  br label %copy_loop
+
+copy_loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %copy ]
+  %copy_done = icmp ugt i64 %i, %name_len
+  br i1 %copy_done, label %pad_loop, label %copy
+
+copy:
+  %src_p = getelementptr i8, ptr %name, i64 %i
+  %dst_name_base = getelementptr i8, ptr %dst, i64 16
+  %dst_p = getelementptr i8, ptr %dst_name_base, i64 %i
+  %c = load i8, ptr %src_p, align 1
+  store i8 %c, ptr %dst_p, align 1
+  %next = add i64 %i, 1
+  br label %copy_loop
+
+pad_loop:
+  %pad_i = phi i64 [ %first_pad, %copy_loop ], [ %pad_next, %pad ]
+  %pad_done = icmp uge i64 %pad_i, %reclen
+  br i1 %pad_done, label %done, label %pad
+
+pad:
+  %pad_p = getelementptr i8, ptr %dst, i64 %pad_i
+  store i8 0, ptr %pad_p, align 1
+  %pad_next = add i64 %pad_i, 1
+  br label %pad_loop
+
+done:
+  ret void
+}
+
+define internal i64 @__mtrt_linux_translate_getdents64(ptr %buf, i64 %native_bytes) {
+entry:
+  br label %loop
+
+loop:
+  %src_off = phi i64 [ 0, %entry ], [ %src_next, %advance ]
+  %dst_off = phi i64 [ 0, %entry ], [ %dst_next, %advance ]
+  %more = icmp ult i64 %src_off, %native_bytes
+  br i1 %more, label %record, label %done
+
+record:
+  %rec = getelementptr i8, ptr %buf, i64 %src_off
+  %reclen_p = getelementptr i8, ptr %rec, i64 16
+  %reclen16 = load i16, ptr %reclen_p, align 2
+  %native_reclen = zext i16 %reclen16 to i64
+  %src_next = add i64 %src_off, %native_reclen
+  %reclen_min = icmp uge i64 %native_reclen, 20
+  %reclen_nonzero = icmp ne i64 %native_reclen, 0
+  %src_within = icmp ule i64 %src_next, %native_bytes
+  %valid0 = and i1 %reclen_min, %reclen_nonzero
+  %valid = and i1 %valid0, %src_within
+  br i1 %valid, label %name, label %bad
+
+name:
+  %ino = load i64, ptr %rec, align 8
+  %dtype_p = getelementptr i8, ptr %rec, i64 18
+  %native_dtype = load i8, ptr %dtype_p, align 1
+  %dtype = call i8 @__mtrt_common_dtype(i8 %native_dtype)
+  %name_p = getelementptr i8, ptr %rec, i64 19
+  %name_limit = sub i64 %native_reclen, 19
+  %name_len = call i64 @__mtrt_name_len_bounded(ptr %name_p, i64 %name_limit)
+  %has_nul = icmp ult i64 %name_len, %name_limit
+  br i1 %has_nul, label %store, label %bad
+
+store:
+  %target_reclen_raw = add i64 %name_len, 24
+  %target_reclen = and i64 %target_reclen_raw, -8
+  %dst_next = add i64 %dst_off, %target_reclen
+  %dst_within = icmp ule i64 %dst_next, %native_bytes
+  br i1 %dst_within, label %write, label %bad
+
+write:
+  %dst = getelementptr i8, ptr %buf, i64 %dst_off
+  call void @__mtrt_store_dent64(ptr %dst, i64 %ino, i64 %target_reclen, i8 %dtype, ptr %name_p, i64 %name_len)
+  br label %advance
+
+advance:
+  br label %loop
+
+done:
+  ret i64 %dst_off
+
+bad:
+  ret i64 -5
+}
+
 define i64 @__mtrt_host_getpid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 172)
   ret i64 %r
@@ -328,6 +472,32 @@ define i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall4(i64 56, i64 %dirfd, i64 %path_i, i64 %flags, i64 %mode)
   ret i64 %r
+}
+
+define i64 @__mtrt_host_posix_getdents(i64 %fd, ptr %buf, i64 %nbyte, i64 %flags) {
+entry:
+  %flags_ok = icmp eq i64 %flags, 0
+  br i1 %flags_ok, label %check_size, label %invalid
+
+check_size:
+  %size_ok = icmp uge i64 %nbyte, 24
+  br i1 %size_ok, label %call_getdents, label %invalid
+
+call_getdents:
+  %buf_i = ptrtoint ptr %buf to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 61, i64 %fd, i64 %buf_i, i64 %nbyte)
+  %has_entries = icmp sgt i64 %r, 0
+  br i1 %has_entries, label %translate, label %done
+
+translate:
+  %translated = call i64 @__mtrt_linux_translate_getdents64(ptr %buf, i64 %r)
+  ret i64 %translated
+
+done:
+  ret i64 %r
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {

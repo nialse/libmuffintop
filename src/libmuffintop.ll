@@ -33,6 +33,7 @@ declare i64 @__mtrt_host_readv(i64, ptr, i64)
 declare i64 @__mtrt_host_writev(i64, ptr, i64)
 declare i64 @__mtrt_host_open(ptr, i64, i64)
 declare i64 @__mtrt_host_openat(i64, ptr, i64, i64)
+declare i64 @__mtrt_host_posix_getdents(i64, ptr, i64, i64)
 declare i64 @__mtrt_host_lseek(i64, i64, i64)
 declare i64 @__mtrt_host_pread(i64, ptr, i64, i64)
 declare i64 @__mtrt_host_pwrite(i64, ptr, i64, i64)
@@ -292,6 +293,14 @@ entry:
   %raw = call i64 @__mtrt_host_openat(i64 %dirfd64, ptr %path, i64 %flags64, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+}
+
+define i64 @posix_getdents(i32 %fd, ptr %buf, i64 %nbyte, i32 %flags) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %flags64 = sext i32 %flags to i64
+  %raw = call i64 @__mtrt_host_posix_getdents(i64 %fd64, ptr %buf, i64 %nbyte, i64 %flags64)
+  ret i64 %raw
 }
 
 define i64 @lseek(i32 %fd, i64 %offset, i32 %whence) {
