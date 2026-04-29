@@ -7,9 +7,6 @@ target triple = "x86_64-unknown-linux-gnu"
 %struct.timespec = type { i64, i64 }
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
-; Current compatibility scaffold only. Target ABI returns negative errno values.
-@mtrt_errno = global i32 0, align 4
-
 declare i64 @__mtrt_host_getpid()
 declare i64 @__mtrt_host_getppid()
 declare i64 @__mtrt_host_fork()
@@ -61,7 +58,6 @@ declare i64 @__mtrt_host_stat(ptr, ptr)
 declare i64 @__mtrt_host_fstat(i64, ptr)
 declare i64 @__mtrt_host_lstat(ptr, ptr)
 declare i64 @__mtrt_host_fstatat(i64, ptr, ptr, i64)
-declare i64 @__mtrt_host_brk(i64)
 declare i64 @__mtrt_host_chown(ptr, i64, i64)
 declare i64 @__mtrt_host_clock_getres(i64, ptr)
 declare i64 @__mtrt_host_clock_settime(i64, ptr)
@@ -72,7 +68,6 @@ declare i64 @__mtrt_host_fcntl(i64, i64, i64)
 declare i64 @__mtrt_host_fdatasync(i64)
 declare i64 @__mtrt_host_fsync(i64)
 declare i64 @__mtrt_host_getcwd(ptr, i64)
-declare i64 @__mtrt_host_gettimeofday(ptr, ptr)
 declare i64 @__mtrt_host_lchown(ptr, i64, i64)
 declare i64 @__mtrt_host_madvise(i64, i64, i64)
 declare i64 @__mtrt_host_mlock(i64, i64)
@@ -94,12 +89,6 @@ declare i64 @__mtrt_host_sigsuspend(ptr)
 declare i64 @__mtrt_host_sigtimedwait(ptr, ptr, ptr)
 declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
 declare i64 @__mtrt_host_times(ptr)
-declare i64 @__mtrt_host_vfork()
-
-define ptr @__errno_location() {
-entry:
-  ret ptr @mtrt_errno
-}
 
 define i32 @getpid() {
 entry:
@@ -387,24 +376,6 @@ entry:
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
-; Current ENOSYS stubs for exported symbols not yet classified or host-wired.
-define internal i64 @__muffintop_enosys_i64() {
-entry:
-  store i32 38, ptr @mtrt_errno, align 4
-  ret i64 -1
-}
-
-define i64 @alarm(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @brk(i64 %addr) {
-entry:
-  %raw = call i64 @__mtrt_host_brk(i64 %addr)
-  ret i64 %raw
-}
 
 define i32 @chown(ptr %path, i32 %uid, i32 %gid) {
 entry:
@@ -431,47 +402,11 @@ entry:
   ret i32 %ret
 }
 
-define i64 @closedir(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @execl(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @execlp(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @execv(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i32 @execve(ptr %path, ptr %argv, ptr %envp) {
 entry:
   %raw = call i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @execvp(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define void @exit(i32 %status) {
-entry:
-  call void @_exit(i32 %status)
-  unreachable
 }
 
 define i32 @fchown(i32 %fd, i32 %uid, i32 %gid) {
@@ -511,12 +446,6 @@ entry:
   ret i32 %ret
 }
 
-define i64 @fdopendir(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i32 @fstat(i32 %fd, ptr %buf) {
 entry:
   %fd64 = sext i32 %fd to i64
@@ -548,19 +477,6 @@ entry:
   ret i64 %raw
 }
 
-define i32 @gettimeofday(ptr %tv, ptr %tz) {
-entry:
-  %raw = call i64 @__mtrt_host_gettimeofday(ptr %tv, ptr %tz)
-  %ret = trunc i64 %raw to i32
-  ret i32 %ret
-}
-
-define i64 @gmtime_r(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i32 @lchown(ptr %path, i32 %uid, i32 %gid) {
 entry:
   %uid64 = sext i32 %uid to i64
@@ -585,12 +501,6 @@ entry:
   %raw = call i64 @__mtrt_host_linkat(i64 %olddirfd64, ptr %oldpath, i64 %newdirfd64, ptr %newpath, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @localtime_r(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i32 @lstat(ptr %path, ptr %buf) {
@@ -623,18 +533,6 @@ entry:
   %raw = call i64 @__mtrt_host_mkdirat(i64 %dirfd64, ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @mkstemp(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @mktime(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i32 @mlock(i64 %addr, i64 %length) {
@@ -698,12 +596,6 @@ entry:
   ret i32 %ret
 }
 
-define i64 @opendir(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i32 @pause() {
 entry:
   %raw = call i64 @__mtrt_host_pause()
@@ -717,132 +609,6 @@ entry:
   %raw = call i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @posix_memalign(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_atfork(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_barrier_family(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_cond_family(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_create(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_detach(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define void @pthread_exit(...) {
-entry:
-  call void @_exit(i32 38)
-  unreachable
-}
-
-define i64 @pthread_getspecific(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_join(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_key_create(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_key_delete(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_kill(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_mutex_family(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_once(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_rwlock_family(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_self(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_setspecific(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_sigmask(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @pthread_spin_family(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @raise(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
-define i64 @readdir(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i64 @readlink(ptr %path, ptr %buf, i64 %size) {
@@ -874,23 +640,11 @@ entry:
   ret i32 %ret
 }
 
-define i64 @rewinddir(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i32 @rmdir(ptr %path) {
 entry:
   %raw = call i64 @__mtrt_host_rmdir(ptr %path)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @sbrk(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i32 @sched_yield() {
@@ -913,12 +667,6 @@ entry:
   %raw = call i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @signal(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i32 @sigpending(ptr %sigset) {
@@ -950,12 +698,6 @@ entry:
   ret i32 %ret
 }
 
-define i64 @sigwait(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
-}
-
 define i32 @sigwaitinfo(ptr %set, ptr %info) {
 entry:
   %raw = call i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info)
@@ -963,54 +705,11 @@ entry:
   ret i32 %ret
 }
 
-define i64 @sleep(i64 %seconds) {
-entry:
-  %req = alloca %struct.timespec, align 8
-  %rem = alloca %struct.timespec, align 8
-
-  %req_sec = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 0
-  %req_nsec = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 1
-  store i64 %seconds, ptr %req_sec, align 8
-  store i64 0, ptr %req_nsec, align 8
-
-  br label %loop
-
-loop:
-  %rc = call i32 @nanosleep(ptr %req, ptr %rem)
-  %ok = icmp eq i32 %rc, 0
-  br i1 %ok, label %done_zero, label %check_intr
-
-check_intr:
-  %is_eintr = icmp eq i32 %rc, -4
-  br i1 %is_eintr, label %continue, label %done_orig
-
-continue:
-  %rem_sec = getelementptr inbounds %struct.timespec, ptr %rem, i32 0, i32 0
-  %rem_nsec = getelementptr inbounds %struct.timespec, ptr %rem, i32 0, i32 1
-  %next_sec = load i64, ptr %rem_sec, align 8
-  %next_nsec = load i64, ptr %rem_nsec, align 8
-  store i64 %next_sec, ptr %req_sec, align 8
-  store i64 %next_nsec, ptr %req_nsec, align 8
-  br label %loop
-
-done_zero:
-  ret i64 0
-
-done_orig:
-  ret i64 %seconds
-}
-
 define i32 @stat(ptr %path, ptr %buf) {
 entry:
   %raw = call i64 @__mtrt_host_stat(ptr %path, ptr %buf)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
-}
-
-define i64 @strftime(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }
 
 define i32 @symlink(ptr %target, ptr %linkpath) {
@@ -1028,66 +727,8 @@ entry:
   ret i32 %ret
 }
 
-define i64 @time(ptr %tloc) {
-entry:
-  %ts = alloca %struct.timespec, align 8
-  %rc = call i32 @clock_gettime(i32 0, ptr %ts)
-  %ok = icmp eq i32 %rc, 0
-  br i1 %ok, label %extract, label %fail
-
-extract:
-  %secp = getelementptr inbounds %struct.timespec, ptr %ts, i32 0, i32 0
-  %sec = load i64, ptr %secp, align 8
-  %has_tloc = icmp ne ptr %tloc, null
-  br i1 %has_tloc, label %store, label %ret
-
-store:
-  store i64 %sec, ptr %tloc, align 8
-  br label %ret
-
-ret:
-  ret i64 %sec
-
-fail:
-  %err = sext i32 %rc to i64
-  ret i64 %err
-}
-
 define i64 @times(ptr %buf) {
 entry:
   %raw = call i64 @__mtrt_host_times(ptr %buf)
   ret i64 %raw
-}
-
-define i64 @usleep(i64 %usec) {
-entry:
-  %too_large = icmp uge i64 %usec, 1000000
-  br i1 %too_large, label %einval, label %do_sleep
-
-einval:
-  ret i64 -22
-
-do_sleep:
-  %req = alloca %struct.timespec, align 8
-  %secp = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 0
-  %nsecp = getelementptr inbounds %struct.timespec, ptr %req, i32 0, i32 1
-  %nsec = mul i64 %usec, 1000
-  store i64 0, ptr %secp, align 8
-  store i64 %nsec, ptr %nsecp, align 8
-  %rc = call i32 @nanosleep(ptr %req, ptr null)
-  %ret = sext i32 %rc to i64
-  ret i64 %ret
-}
-
-define i32 @vfork() {
-entry:
-  %raw = call i64 @__mtrt_host_vfork()
-  %ret = trunc i64 %raw to i32
-  ret i32 %ret
-}
-
-define i64 @wait(...) {
-entry:
-  %r = call i64 @__muffintop_enosys_i64()
-  ret i64 %r
 }

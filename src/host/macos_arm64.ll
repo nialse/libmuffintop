@@ -447,7 +447,7 @@ fault:
 call_time:
   %tv = alloca [16 x i8], align 8
   %tv_i = ptrtoint ptr %tv to i64
-  %r = call i64 @__mtrt_darwin_syscall2(i64 116, i64 %tv_i, i64 0)
+  %r = call i64 @__mtrt_darwin_syscall3(i64 116, i64 %tv_i, i64 0, i64 0)
   %ok = icmp eq i64 %r, 0
   br i1 %ok, label %store, label %done
 
@@ -905,11 +905,6 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_brk(i64 %addr) {
-entry:
-  ret i64 -38
-}
-
 define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
 entry:
   %path_i = ptrtoint ptr %path to i64
@@ -1027,40 +1022,6 @@ fcntl_done:
 
 open_done:
   ret i64 %fd
-}
-
-define i64 @__mtrt_host_gettimeofday(ptr %tv, ptr %tz) {
-entry:
-  %has_tv = icmp ne ptr %tv, null
-  br i1 %has_tv, label %with_tv, label %without_tv
-
-without_tv:
-  %tz_i0 = ptrtoint ptr %tz to i64
-  %r0 = call i64 @__mtrt_darwin_syscall2(i64 116, i64 0, i64 %tz_i0)
-  ret i64 %r0
-
-with_tv:
-  %native = alloca [16 x i8], align 8
-  %native_i = ptrtoint ptr %native to i64
-  %tz_i = ptrtoint ptr %tz to i64
-  %r = call i64 @__mtrt_darwin_syscall2(i64 116, i64 %native_i, i64 %tz_i)
-  %ok = icmp eq i64 %r, 0
-  br i1 %ok, label %store, label %done
-
-store:
-  %sec_p = getelementptr i8, ptr %native, i64 0
-  %usec_p = getelementptr i8, ptr %native, i64 8
-  %sec = load i64, ptr %sec_p, align 8
-  %usec32 = load i32, ptr %usec_p, align 4
-  %usec = sext i32 %usec32 to i64
-  %tv_sec_p = getelementptr i8, ptr %tv, i64 0
-  %tv_usec_p = getelementptr i8, ptr %tv, i64 8
-  store i64 %sec, ptr %tv_sec_p, align 8
-  store i64 %usec, ptr %tv_usec_p, align 8
-  ret i64 0
-
-done:
-  ret i64 %r
 }
 
 define i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
@@ -1227,11 +1188,6 @@ entry:
 }
 
 define i64 @__mtrt_host_times(ptr %buf) {
-entry:
-  ret i64 -38
-}
-
-define i64 @__mtrt_host_vfork() {
 entry:
   ret i64 -38
 }

@@ -482,11 +482,6 @@ define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
   ret i64 %r
 }
 
-define i64 @__mtrt_host_brk(i64 %addr) {
-  %r = call i64 @__mtrt_linux_syscall1(i64 214, i64 %addr)
-  ret i64 %r
-}
-
 define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall5(i64 54, i64 -100, i64 %path_i, i64 %uid, i64 %gid, i64 0)
@@ -551,13 +546,6 @@ success:
   ret i64 %ret
 
 done:
-  ret i64 %r
-}
-
-define i64 @__mtrt_host_gettimeofday(ptr %tv, ptr %tz) {
-  %tv_i = ptrtoint ptr %tv to i64
-  %tz_i = ptrtoint ptr %tz to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 169, i64 %tv_i, i64 %tz_i)
   ret i64 %r
 }
 
@@ -682,8 +670,4 @@ define i64 @__mtrt_host_times(ptr %buf) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall1(i64 153, i64 %buf_i)
   ret i64 %r
-}
-
-define i64 @__mtrt_host_vfork() {
-  ret i64 -38
 }
