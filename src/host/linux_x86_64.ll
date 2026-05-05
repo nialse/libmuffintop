@@ -326,6 +326,11 @@ define i64 @__mtrt_host_getppid() {
   ret i64 %r
 }
 
+define i64 @__mtrt_host_geteuid() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 107)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_fork() {
   %r = call i64 @__mtrt_linux_syscall0(i64 57)
   ret i64 %r
@@ -636,6 +641,11 @@ define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
   ret i64 %r
 }
 
+define i64 @__mtrt_host_ftruncate(i64 %fd, i64 %length) {
+  %r = call i64 @__mtrt_linux_syscall2(i64 77, i64 %fd, i64 %length)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 92, i64 %path_i, i64 %uid, i64 %gid)
@@ -819,5 +829,12 @@ define i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
 define i64 @__mtrt_host_times(ptr %buf) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall1(i64 100, i64 %buf_i)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
+  %path_i = ptrtoint ptr %path to i64
+  %times_i = ptrtoint ptr %times to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 235, i64 %path_i, i64 %times_i)
   ret i64 %r
 }

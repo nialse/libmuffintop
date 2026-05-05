@@ -9,6 +9,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 declare i64 @__mtrt_host_getpid()
 declare i64 @__mtrt_host_getppid()
+declare i64 @__mtrt_host_geteuid()
 declare i64 @__mtrt_host_fork()
 declare i64 @__mtrt_host_wait4(i64, ptr, i64)
 declare void @__mtrt_host_exit(i64)
@@ -59,6 +60,7 @@ declare i64 @__mtrt_host_stat(ptr, ptr)
 declare i64 @__mtrt_host_fstat(i64, ptr)
 declare i64 @__mtrt_host_lstat(ptr, ptr)
 declare i64 @__mtrt_host_fstatat(i64, ptr, ptr, i64)
+declare i64 @__mtrt_host_ftruncate(i64, i64)
 declare i64 @__mtrt_host_chown(ptr, i64, i64)
 declare i64 @__mtrt_host_clock_getres(i64, ptr)
 declare i64 @__mtrt_host_clock_settime(i64, ptr)
@@ -90,6 +92,7 @@ declare i64 @__mtrt_host_sigsuspend(ptr)
 declare i64 @__mtrt_host_sigtimedwait(ptr, ptr, ptr)
 declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
 declare i64 @__mtrt_host_times(ptr)
+declare i64 @__mtrt_host_utimes(ptr, ptr)
 
 define i32 @getpid() {
 entry:
@@ -101,6 +104,13 @@ entry:
 define i32 @getppid() {
 entry:
   %raw = call i64 @__mtrt_host_getppid()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @geteuid() {
+entry:
+  %raw = call i64 @__mtrt_host_geteuid()
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
@@ -472,6 +482,14 @@ entry:
   ret i32 %ret
 }
 
+define i32 @ftruncate(i32 %fd, i64 %length) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_ftruncate(i64 %fd64, i64 %length)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
 define i32 @fsync(i32 %fd) {
 entry:
   %fd64 = sext i32 %fd to i64
@@ -740,4 +758,11 @@ define i64 @times(ptr %buf) {
 entry:
   %raw = call i64 @__mtrt_host_times(ptr %buf)
   ret i64 %raw
+}
+
+define i32 @utimes(ptr %path, ptr %times) {
+entry:
+  %raw = call i64 @__mtrt_host_utimes(ptr %path, ptr %times)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
 }

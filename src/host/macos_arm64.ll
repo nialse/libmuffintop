@@ -514,6 +514,12 @@ entry:
   ret i64 %r
 }
 
+define i64 @__mtrt_host_geteuid() {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall0(i64 25)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_fork() {
 entry:
   %r = call i64 @__mtrt_darwin_fork()
@@ -1162,6 +1168,12 @@ done:
   ret i64 %r
 }
 
+define i64 @__mtrt_host_ftruncate(i64 %fd, i64 %length) {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall2(i64 201, i64 %fd, i64 %length)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
 entry:
   %path_i = ptrtoint ptr %path to i64
@@ -1513,4 +1525,56 @@ children_done:
 
 done:
   ret i64 %elapsed_ticks
+}
+
+define i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
+entry:
+  %path_i = ptrtoint ptr %path to i64
+  %is_null = icmp eq ptr %times, null
+  br i1 %is_null, label %call_null, label %convert
+
+call_null:
+  %r_null = call i64 @__mtrt_darwin_syscall2(i64 138, i64 %path_i, i64 0)
+  ret i64 %r_null
+
+convert:
+  %atime_sec_p = getelementptr i8, ptr %times, i64 0
+  %atime_usec_p = getelementptr i8, ptr %times, i64 8
+  %mtime_sec_p = getelementptr i8, ptr %times, i64 16
+  %mtime_usec_p = getelementptr i8, ptr %times, i64 24
+  %atime_sec = load i64, ptr %atime_sec_p, align 8
+  %atime_usec = load i64, ptr %atime_usec_p, align 8
+  %mtime_sec = load i64, ptr %mtime_sec_p, align 8
+  %mtime_usec = load i64, ptr %mtime_usec_p, align 8
+  %atime_usec_neg = icmp slt i64 %atime_usec, 0
+  %atime_usec_big = icmp sge i64 %atime_usec, 1000000
+  %mtime_usec_neg = icmp slt i64 %mtime_usec, 0
+  %mtime_usec_big = icmp sge i64 %mtime_usec, 1000000
+  %atime_usec_bad = or i1 %atime_usec_neg, %atime_usec_big
+  %mtime_usec_bad = or i1 %mtime_usec_neg, %mtime_usec_big
+  %usec_bad = or i1 %atime_usec_bad, %mtime_usec_bad
+  br i1 %usec_bad, label %invalid, label %store
+
+invalid:
+  ret i64 -22
+
+store:
+  %native = alloca [32 x i8], align 8
+  %atime_usec32 = trunc i64 %atime_usec to i32
+  %mtime_usec32 = trunc i64 %mtime_usec to i32
+  %native_atime_sec_p = getelementptr i8, ptr %native, i64 0
+  %native_atime_usec_p = getelementptr i8, ptr %native, i64 8
+  %native_atime_pad_p = getelementptr i8, ptr %native, i64 12
+  %native_mtime_sec_p = getelementptr i8, ptr %native, i64 16
+  %native_mtime_usec_p = getelementptr i8, ptr %native, i64 24
+  %native_mtime_pad_p = getelementptr i8, ptr %native, i64 28
+  store i64 %atime_sec, ptr %native_atime_sec_p, align 8
+  store i32 %atime_usec32, ptr %native_atime_usec_p, align 4
+  store i32 0, ptr %native_atime_pad_p, align 4
+  store i64 %mtime_sec, ptr %native_mtime_sec_p, align 8
+  store i32 %mtime_usec32, ptr %native_mtime_usec_p, align 4
+  store i32 0, ptr %native_mtime_pad_p, align 4
+  %native_i = ptrtoint ptr %native to i64
+  %r = call i64 @__mtrt_darwin_syscall2(i64 138, i64 %path_i, i64 %native_i)
+  ret i64 %r
 }
