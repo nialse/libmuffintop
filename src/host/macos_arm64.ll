@@ -1322,11 +1322,6 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mlockall(i64 %flags) {
-entry:
-  ret i64 -38
-}
-
 define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
 entry:
   %prot32 = trunc i64 %prot to i32
@@ -1361,11 +1356,6 @@ define i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 204, i64 %addr, i64 %length)
   ret i64 %r
-}
-
-define i64 @__mtrt_host_munlockall() {
-entry:
-  ret i64 -38
 }
 
 define i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {

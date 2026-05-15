@@ -753,11 +753,6 @@ define i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mlockall(i64 %flags) {
-  %r = call i64 @__mtrt_linux_syscall1(i64 230, i64 %flags)
-  ret i64 %r
-}
-
 define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
   %r = call i64 @__mtrt_linux_syscall6(i64 222, i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset)
   ret i64 %r
@@ -775,11 +770,6 @@ define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
 
 define i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
   %r = call i64 @__mtrt_linux_syscall2(i64 229, i64 %addr, i64 %length)
-  ret i64 %r
-}
-
-define i64 @__mtrt_host_munlockall() {
-  %r = call i64 @__mtrt_linux_syscall0(i64 231)
   ret i64 %r
 }
 

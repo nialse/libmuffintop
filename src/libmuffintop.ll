@@ -75,12 +75,10 @@ declare i64 @__mtrt_host_getcwd(ptr, i64)
 declare i64 @__mtrt_host_lchown(ptr, i64, i64)
 declare i64 @__mtrt_host_madvise(i64, i64, i64)
 declare i64 @__mtrt_host_mlock(i64, i64)
-declare i64 @__mtrt_host_mlockall(i64)
 declare i64 @__mtrt_host_mmap(i64, i64, i64, i64, i64, i64)
 declare i64 @__mtrt_host_mprotect(i64, i64, i64)
 declare i64 @__mtrt_host_msync(i64, i64, i64)
 declare i64 @__mtrt_host_munlock(i64, i64)
-declare i64 @__mtrt_host_munlockall()
 declare i64 @__mtrt_host_munmap(i64, i64)
 declare i64 @__mtrt_host_pause()
 declare i64 @__mtrt_host_pipe2(ptr, i64)
@@ -578,14 +576,6 @@ entry:
   ret i32 %ret
 }
 
-define i32 @mlockall(i32 %flags) {
-entry:
-  %flags64 = sext i32 %flags to i64
-  %raw = call i64 @__mtrt_host_mlockall(i64 %flags64)
-  %ret = trunc i64 %raw to i32
-  ret i32 %ret
-}
-
 define i64 @mmap(i64 %addr, i64 %length, i32 %prot, i32 %flags, i32 %fd, i64 %offset) {
 entry:
   %prot64 = sext i32 %prot to i64
@@ -614,13 +604,6 @@ entry:
 define i32 @munlock(i64 %addr, i64 %length) {
 entry:
   %raw = call i64 @__mtrt_host_munlock(i64 %addr, i64 %length)
-  %ret = trunc i64 %raw to i32
-  ret i32 %ret
-}
-
-define i32 @munlockall() {
-entry:
-  %raw = call i64 @__mtrt_host_munlockall()
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
