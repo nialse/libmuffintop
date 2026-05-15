@@ -49,6 +49,7 @@ declare i64 @__mtrt_host_link(ptr, ptr)
 declare i64 @__mtrt_host_linkat(i64, ptr, i64, ptr, i64)
 declare i64 @__mtrt_host_mkdir(ptr, i64)
 declare i64 @__mtrt_host_mkdirat(i64, ptr, i64)
+declare i64 @__mtrt_host_mkfifo(ptr, i64)
 declare i64 @__mtrt_host_readlink(ptr, ptr, i64)
 declare i64 @__mtrt_host_readlinkat(i64, ptr, ptr, i64)
 declare i64 @__mtrt_host_rename(ptr, ptr)
@@ -558,6 +559,14 @@ entry:
   %dirfd64 = sext i32 %dirfd to i64
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_mkdirat(i64 %dirfd64, ptr %path, i64 %mode64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @mkfifo(ptr %path, i32 %mode) {
+entry:
+  %mode64 = sext i32 %mode to i64
+  %raw = call i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }

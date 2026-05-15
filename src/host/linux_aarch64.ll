@@ -589,6 +589,14 @@ define i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
   ret i64 %r
 }
 
+define i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode) {
+  %path_i = ptrtoint ptr %path to i64
+  %perm = and i64 %mode, 511
+  %fifo_mode = or i64 %perm, 4096
+  %r = call i64 @__mtrt_linux_syscall4(i64 33, i64 -100, i64 %path_i, i64 %fifo_mode, i64 0)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
   %path_i = ptrtoint ptr %path to i64
   %buf_i = ptrtoint ptr %buf to i64

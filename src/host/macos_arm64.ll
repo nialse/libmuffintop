@@ -990,6 +990,14 @@ entry:
   ret i64 %r
 }
 
+define i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode) {
+entry:
+  %path_i = ptrtoint ptr %path to i64
+  %mode_masked = and i64 %mode, 511
+  %r = call i64 @__mtrt_darwin_syscall2(i64 132, i64 %path_i, i64 %mode_masked)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
