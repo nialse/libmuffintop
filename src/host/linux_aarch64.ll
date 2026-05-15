@@ -676,6 +676,896 @@ define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
   ret i64 %r
 }
 
+define internal i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 %request, ptr %arg) {
+entry:
+  %arg_i = ptrtoint ptr %arg to i64
+  %r = call i64 @__mtrt_linux_syscall3(i64 29, i64 %fd, i64 %request, i64 %arg_i)
+  ret i64 %r
+}
+
+define internal i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 %request, i64 %arg) {
+entry:
+  %r = call i64 @__mtrt_linux_syscall3(i64 29, i64 %fd, i64 %request, i64 %arg)
+  ret i64 %r
+}
+
+define internal i32 @__mtrt_linux_speed_to_native(i32 %speed) {
+entry:
+  switch i32 %speed, label %bad [
+    i32 0, label %s0
+    i32 50, label %s1
+    i32 75, label %s2
+    i32 110, label %s3
+    i32 134, label %s4
+    i32 150, label %s5
+    i32 200, label %s6
+    i32 300, label %s7
+    i32 600, label %s8
+    i32 1200, label %s9
+    i32 1800, label %s10
+    i32 2400, label %s11
+    i32 4800, label %s12
+    i32 9600, label %s13
+    i32 19200, label %s14
+    i32 38400, label %s15
+  ]
+
+s0:
+  ret i32 0
+
+s1:
+  ret i32 1
+
+s2:
+  ret i32 2
+
+s3:
+  ret i32 3
+
+s4:
+  ret i32 4
+
+s5:
+  ret i32 5
+
+s6:
+  ret i32 6
+
+s7:
+  ret i32 7
+
+s8:
+  ret i32 8
+
+s9:
+  ret i32 9
+
+s10:
+  ret i32 10
+
+s11:
+  ret i32 11
+
+s12:
+  ret i32 12
+
+s13:
+  ret i32 13
+
+s14:
+  ret i32 14
+
+s15:
+  ret i32 15
+
+bad:
+  ret i32 -1
+}
+
+define internal i32 @__mtrt_linux_native_speed_to_target(i32 %native) {
+entry:
+  switch i32 %native, label %bad [
+    i32 0, label %s0
+    i32 1, label %s1
+    i32 2, label %s2
+    i32 3, label %s3
+    i32 4, label %s4
+    i32 5, label %s5
+    i32 6, label %s6
+    i32 7, label %s7
+    i32 8, label %s8
+    i32 9, label %s9
+    i32 10, label %s10
+    i32 11, label %s11
+    i32 12, label %s12
+    i32 13, label %s13
+    i32 14, label %s14
+    i32 15, label %s15
+  ]
+
+s0:
+  ret i32 0
+
+s1:
+  ret i32 50
+
+s2:
+  ret i32 75
+
+s3:
+  ret i32 110
+
+s4:
+  ret i32 134
+
+s5:
+  ret i32 150
+
+s6:
+  ret i32 200
+
+s7:
+  ret i32 300
+
+s8:
+  ret i32 600
+
+s9:
+  ret i32 1200
+
+s10:
+  ret i32 1800
+
+s11:
+  ret i32 2400
+
+s12:
+  ret i32 4800
+
+s13:
+  ret i32 9600
+
+s14:
+  ret i32 19200
+
+s15:
+  ret i32 38400
+
+bad:
+  ret i32 0
+}
+
+define internal i64 @__mtrt_linux_iflag_to_target(i64 %native) {
+entry:
+  %n0 = and i64 %native, 1
+  %has0 = icmp ne i64 %n0, 0
+  %v0 = select i1 %has0, i64 1, i64 0
+  %acc0 = or i64 0, %v0
+  %n1 = and i64 %native, 2
+  %has1 = icmp ne i64 %n1, 0
+  %v1 = select i1 %has1, i64 2, i64 0
+  %acc1 = or i64 %acc0, %v1
+  %n2 = and i64 %native, 4
+  %has2 = icmp ne i64 %n2, 0
+  %v2 = select i1 %has2, i64 4, i64 0
+  %acc2 = or i64 %acc1, %v2
+  %n3 = and i64 %native, 8
+  %has3 = icmp ne i64 %n3, 0
+  %v3 = select i1 %has3, i64 8, i64 0
+  %acc3 = or i64 %acc2, %v3
+  %n4 = and i64 %native, 16
+  %has4 = icmp ne i64 %n4, 0
+  %v4 = select i1 %has4, i64 16, i64 0
+  %acc4 = or i64 %acc3, %v4
+  %n5 = and i64 %native, 32
+  %has5 = icmp ne i64 %n5, 0
+  %v5 = select i1 %has5, i64 32, i64 0
+  %acc5 = or i64 %acc4, %v5
+  %n6 = and i64 %native, 64
+  %has6 = icmp ne i64 %n6, 0
+  %v6 = select i1 %has6, i64 64, i64 0
+  %acc6 = or i64 %acc5, %v6
+  %n7 = and i64 %native, 128
+  %has7 = icmp ne i64 %n7, 0
+  %v7 = select i1 %has7, i64 128, i64 0
+  %acc7 = or i64 %acc6, %v7
+  %n8 = and i64 %native, 256
+  %has8 = icmp ne i64 %n8, 0
+  %v8 = select i1 %has8, i64 256, i64 0
+  %acc8 = or i64 %acc7, %v8
+  %n9 = and i64 %native, 1024
+  %has9 = icmp ne i64 %n9, 0
+  %v9 = select i1 %has9, i64 512, i64 0
+  %acc9 = or i64 %acc8, %v9
+  %n10 = and i64 %native, 4096
+  %has10 = icmp ne i64 %n10, 0
+  %v10 = select i1 %has10, i64 1024, i64 0
+  %acc10 = or i64 %acc9, %v10
+  %n11 = and i64 %native, 2048
+  %has11 = icmp ne i64 %n11, 0
+  %v11 = select i1 %has11, i64 2048, i64 0
+  %acc11 = or i64 %acc10, %v11
+  ret i64 %acc11
+}
+
+define internal i64 @__mtrt_linux_iflag_to_native(i64 %target) {
+entry:
+  %t0 = and i64 %target, 1
+  %has0 = icmp ne i64 %t0, 0
+  %v0 = select i1 %has0, i64 1, i64 0
+  %acc0 = or i64 0, %v0
+  %t1 = and i64 %target, 2
+  %has1 = icmp ne i64 %t1, 0
+  %v1 = select i1 %has1, i64 2, i64 0
+  %acc1 = or i64 %acc0, %v1
+  %t2 = and i64 %target, 4
+  %has2 = icmp ne i64 %t2, 0
+  %v2 = select i1 %has2, i64 4, i64 0
+  %acc2 = or i64 %acc1, %v2
+  %t3 = and i64 %target, 8
+  %has3 = icmp ne i64 %t3, 0
+  %v3 = select i1 %has3, i64 8, i64 0
+  %acc3 = or i64 %acc2, %v3
+  %t4 = and i64 %target, 16
+  %has4 = icmp ne i64 %t4, 0
+  %v4 = select i1 %has4, i64 16, i64 0
+  %acc4 = or i64 %acc3, %v4
+  %t5 = and i64 %target, 32
+  %has5 = icmp ne i64 %t5, 0
+  %v5 = select i1 %has5, i64 32, i64 0
+  %acc5 = or i64 %acc4, %v5
+  %t6 = and i64 %target, 64
+  %has6 = icmp ne i64 %t6, 0
+  %v6 = select i1 %has6, i64 64, i64 0
+  %acc6 = or i64 %acc5, %v6
+  %t7 = and i64 %target, 128
+  %has7 = icmp ne i64 %t7, 0
+  %v7 = select i1 %has7, i64 128, i64 0
+  %acc7 = or i64 %acc6, %v7
+  %t8 = and i64 %target, 256
+  %has8 = icmp ne i64 %t8, 0
+  %v8 = select i1 %has8, i64 256, i64 0
+  %acc8 = or i64 %acc7, %v8
+  %t9 = and i64 %target, 512
+  %has9 = icmp ne i64 %t9, 0
+  %v9 = select i1 %has9, i64 1024, i64 0
+  %acc9 = or i64 %acc8, %v9
+  %t10 = and i64 %target, 1024
+  %has10 = icmp ne i64 %t10, 0
+  %v10 = select i1 %has10, i64 4096, i64 0
+  %acc10 = or i64 %acc9, %v10
+  %t11 = and i64 %target, 2048
+  %has11 = icmp ne i64 %t11, 0
+  %v11 = select i1 %has11, i64 2048, i64 0
+  %acc11 = or i64 %acc10, %v11
+  ret i64 %acc11
+}
+
+define internal i64 @__mtrt_linux_oflag_to_target(i64 %native) {
+entry:
+  %n0 = and i64 %native, 1
+  %has0 = icmp ne i64 %n0, 0
+  %v0 = select i1 %has0, i64 1, i64 0
+  %acc0 = or i64 0, %v0
+  %n1 = and i64 %native, 4
+  %has1 = icmp ne i64 %n1, 0
+  %v1 = select i1 %has1, i64 2, i64 0
+  %acc1 = or i64 %acc0, %v1
+  %n2 = and i64 %native, 8
+  %has2 = icmp ne i64 %n2, 0
+  %v2 = select i1 %has2, i64 4, i64 0
+  %acc2 = or i64 %acc1, %v2
+  %n3 = and i64 %native, 16
+  %has3 = icmp ne i64 %n3, 0
+  %v3 = select i1 %has3, i64 8, i64 0
+  %acc3 = or i64 %acc2, %v3
+  %n4 = and i64 %native, 32
+  %has4 = icmp ne i64 %n4, 0
+  %v4 = select i1 %has4, i64 16, i64 0
+  %acc4 = or i64 %acc3, %v4
+  %n5 = and i64 %native, 64
+  %has5 = icmp ne i64 %n5, 0
+  %v5 = select i1 %has5, i64 32, i64 0
+  %acc5 = or i64 %acc4, %v5
+  ret i64 %acc5
+}
+
+define internal i64 @__mtrt_linux_oflag_to_native(i64 %target) {
+entry:
+  %t0 = and i64 %target, 1
+  %has0 = icmp ne i64 %t0, 0
+  %v0 = select i1 %has0, i64 1, i64 0
+  %acc0 = or i64 0, %v0
+  %t1 = and i64 %target, 2
+  %has1 = icmp ne i64 %t1, 0
+  %v1 = select i1 %has1, i64 4, i64 0
+  %acc1 = or i64 %acc0, %v1
+  %t2 = and i64 %target, 4
+  %has2 = icmp ne i64 %t2, 0
+  %v2 = select i1 %has2, i64 8, i64 0
+  %acc2 = or i64 %acc1, %v2
+  %t3 = and i64 %target, 8
+  %has3 = icmp ne i64 %t3, 0
+  %v3 = select i1 %has3, i64 16, i64 0
+  %acc3 = or i64 %acc2, %v3
+  %t4 = and i64 %target, 16
+  %has4 = icmp ne i64 %t4, 0
+  %v4 = select i1 %has4, i64 32, i64 0
+  %acc4 = or i64 %acc3, %v4
+  %t5 = and i64 %target, 32
+  %has5 = icmp ne i64 %t5, 0
+  %v5 = select i1 %has5, i64 64, i64 0
+  %acc5 = or i64 %acc4, %v5
+  ret i64 %acc5
+}
+
+define internal i64 @__mtrt_linux_cflag_to_target(i64 %native) {
+entry:
+  %size = and i64 %native, 48
+  %is_cs6 = icmp eq i64 %size, 16
+  %cs6 = select i1 %is_cs6, i64 1, i64 0
+  %is_cs7 = icmp eq i64 %size, 32
+  %cs7 = select i1 %is_cs7, i64 2, i64 0
+  %is_cs8 = icmp eq i64 %size, 48
+  %cs8 = select i1 %is_cs8, i64 3, i64 0
+  %cs67 = or i64 %cs6, %cs7
+  %cs = or i64 %cs67, %cs8
+  %stop_n = and i64 %native, 64
+  %stop_has = icmp ne i64 %stop_n, 0
+  %stop = select i1 %stop_has, i64 4, i64 0
+  %read_n = and i64 %native, 128
+  %read_has = icmp ne i64 %read_n, 0
+  %read = select i1 %read_has, i64 8, i64 0
+  %parenb_n = and i64 %native, 256
+  %parenb_has = icmp ne i64 %parenb_n, 0
+  %parenb = select i1 %parenb_has, i64 16, i64 0
+  %parodd_n = and i64 %native, 512
+  %parodd_has = icmp ne i64 %parodd_n, 0
+  %parodd = select i1 %parodd_has, i64 32, i64 0
+  %hup_n = and i64 %native, 1024
+  %hup_has = icmp ne i64 %hup_n, 0
+  %hup = select i1 %hup_has, i64 64, i64 0
+  %local_n = and i64 %native, 2048
+  %local_has = icmp ne i64 %local_n, 0
+  %local = select i1 %local_has, i64 128, i64 0
+  %a = or i64 %cs, %stop
+  %b = or i64 %a, %read
+  %c = or i64 %b, %parenb
+  %d = or i64 %c, %parodd
+  %e = or i64 %d, %hup
+  %f = or i64 %e, %local
+  ret i64 %f
+}
+
+define internal i64 @__mtrt_linux_cflag_to_native(i64 %target) {
+entry:
+  %size = and i64 %target, 3
+  %is_cs6 = icmp eq i64 %size, 1
+  %cs6 = select i1 %is_cs6, i64 16, i64 0
+  %is_cs7 = icmp eq i64 %size, 2
+  %cs7 = select i1 %is_cs7, i64 32, i64 0
+  %is_cs8 = icmp eq i64 %size, 3
+  %cs8 = select i1 %is_cs8, i64 48, i64 0
+  %cs67 = or i64 %cs6, %cs7
+  %cs = or i64 %cs67, %cs8
+  %stop_t = and i64 %target, 4
+  %stop_has = icmp ne i64 %stop_t, 0
+  %stop = select i1 %stop_has, i64 64, i64 0
+  %read_t = and i64 %target, 8
+  %read_has = icmp ne i64 %read_t, 0
+  %read = select i1 %read_has, i64 128, i64 0
+  %parenb_t = and i64 %target, 16
+  %parenb_has = icmp ne i64 %parenb_t, 0
+  %parenb = select i1 %parenb_has, i64 256, i64 0
+  %parodd_t = and i64 %target, 32
+  %parodd_has = icmp ne i64 %parodd_t, 0
+  %parodd = select i1 %parodd_has, i64 512, i64 0
+  %hup_t = and i64 %target, 64
+  %hup_has = icmp ne i64 %hup_t, 0
+  %hup = select i1 %hup_has, i64 1024, i64 0
+  %local_t = and i64 %target, 128
+  %local_has = icmp ne i64 %local_t, 0
+  %local = select i1 %local_has, i64 2048, i64 0
+  %a = or i64 %cs, %stop
+  %b = or i64 %a, %read
+  %c = or i64 %b, %parenb
+  %d = or i64 %c, %parodd
+  %e = or i64 %d, %hup
+  %f = or i64 %e, %local
+  ret i64 %f
+}
+
+define internal i64 @__mtrt_linux_lflag_to_target(i64 %native) {
+entry:
+  %n0 = and i64 %native, 8
+  %has0 = icmp ne i64 %n0, 0
+  %v0 = select i1 %has0, i64 1, i64 0
+  %acc0 = or i64 0, %v0
+  %n1 = and i64 %native, 16
+  %has1 = icmp ne i64 %n1, 0
+  %v1 = select i1 %has1, i64 2, i64 0
+  %acc1 = or i64 %acc0, %v1
+  %n2 = and i64 %native, 32
+  %has2 = icmp ne i64 %n2, 0
+  %v2 = select i1 %has2, i64 4, i64 0
+  %acc2 = or i64 %acc1, %v2
+  %n3 = and i64 %native, 64
+  %has3 = icmp ne i64 %n3, 0
+  %v3 = select i1 %has3, i64 8, i64 0
+  %acc3 = or i64 %acc2, %v3
+  %n4 = and i64 %native, 2
+  %has4 = icmp ne i64 %n4, 0
+  %v4 = select i1 %has4, i64 16, i64 0
+  %acc4 = or i64 %acc3, %v4
+  %n5 = and i64 %native, 32768
+  %has5 = icmp ne i64 %n5, 0
+  %v5 = select i1 %has5, i64 32, i64 0
+  %acc5 = or i64 %acc4, %v5
+  %n6 = and i64 %native, 1
+  %has6 = icmp ne i64 %n6, 0
+  %v6 = select i1 %has6, i64 64, i64 0
+  %acc6 = or i64 %acc5, %v6
+  %n7 = and i64 %native, 128
+  %has7 = icmp ne i64 %n7, 0
+  %v7 = select i1 %has7, i64 128, i64 0
+  %acc7 = or i64 %acc6, %v7
+  %n8 = and i64 %native, 256
+  %has8 = icmp ne i64 %n8, 0
+  %v8 = select i1 %has8, i64 256, i64 0
+  %acc8 = or i64 %acc7, %v8
+  ret i64 %acc8
+}
+
+define internal i64 @__mtrt_linux_lflag_to_native(i64 %target) {
+entry:
+  %t0 = and i64 %target, 1
+  %has0 = icmp ne i64 %t0, 0
+  %v0 = select i1 %has0, i64 8, i64 0
+  %acc0 = or i64 0, %v0
+  %t1 = and i64 %target, 2
+  %has1 = icmp ne i64 %t1, 0
+  %v1 = select i1 %has1, i64 16, i64 0
+  %acc1 = or i64 %acc0, %v1
+  %t2 = and i64 %target, 4
+  %has2 = icmp ne i64 %t2, 0
+  %v2 = select i1 %has2, i64 32, i64 0
+  %acc2 = or i64 %acc1, %v2
+  %t3 = and i64 %target, 8
+  %has3 = icmp ne i64 %t3, 0
+  %v3 = select i1 %has3, i64 64, i64 0
+  %acc3 = or i64 %acc2, %v3
+  %t4 = and i64 %target, 16
+  %has4 = icmp ne i64 %t4, 0
+  %v4 = select i1 %has4, i64 2, i64 0
+  %acc4 = or i64 %acc3, %v4
+  %t5 = and i64 %target, 32
+  %has5 = icmp ne i64 %t5, 0
+  %v5 = select i1 %has5, i64 32768, i64 0
+  %acc5 = or i64 %acc4, %v5
+  %t6 = and i64 %target, 64
+  %has6 = icmp ne i64 %t6, 0
+  %v6 = select i1 %has6, i64 1, i64 0
+  %acc6 = or i64 %acc5, %v6
+  %t7 = and i64 %target, 128
+  %has7 = icmp ne i64 %t7, 0
+  %v7 = select i1 %has7, i64 128, i64 0
+  %acc7 = or i64 %acc6, %v7
+  %t8 = and i64 %target, 256
+  %has8 = icmp ne i64 %t8, 0
+  %v8 = select i1 %has8, i64 256, i64 0
+  %acc8 = or i64 %acc7, %v8
+  ret i64 %acc8
+}
+
+define internal void @__mtrt_linux_zero_target_cc(ptr %target) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %body ]
+  %done = icmp uge i64 %i, 32
+  br i1 %done, label %ret, label %body
+
+body:
+  %p0 = getelementptr i8, ptr %target, i64 40
+  %p = getelementptr i8, ptr %p0, i64 %i
+  store i8 0, ptr %p, align 1
+  %next = add i64 %i, 1
+  br label %loop
+
+ret:
+  ret void
+}
+
+define internal void @__mtrt_linux_copy_native_cc_to_target(ptr %target, ptr %native) {
+entry:
+  call void @__mtrt_linux_zero_target_cc(ptr %target)
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %body ]
+  %done = icmp uge i64 %i, 19
+  br i1 %done, label %ret, label %body
+
+body:
+  %src0 = getelementptr i8, ptr %native, i64 17
+  %src = getelementptr i8, ptr %src0, i64 %i
+  %v = load i8, ptr %src, align 1
+  %dst0 = getelementptr i8, ptr %target, i64 40
+  %dst = getelementptr i8, ptr %dst0, i64 %i
+  store i8 %v, ptr %dst, align 1
+  %next = add i64 %i, 1
+  br label %loop
+
+ret:
+  ret void
+}
+
+define internal void @__mtrt_linux_copy_target_cc_to_native(ptr %native, ptr %target) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %body ]
+  %done = icmp uge i64 %i, 19
+  br i1 %done, label %ret, label %body
+
+body:
+  %src0 = getelementptr i8, ptr %target, i64 40
+  %src = getelementptr i8, ptr %src0, i64 %i
+  %v = load i8, ptr %src, align 1
+  %dst0 = getelementptr i8, ptr %native, i64 17
+  %dst = getelementptr i8, ptr %dst0, i64 %i
+  store i8 %v, ptr %dst, align 1
+  %next = add i64 %i, 1
+  br label %loop
+
+ret:
+  ret void
+}
+
+define internal i1 @__mtrt_linux_termios_target_valid(ptr %target) {
+entry:
+  %iflag = load i64, ptr %target, align 8
+  %if_extra = and i64 %iflag, -4096
+  %if_bad = icmp ne i64 %if_extra, 0
+  br i1 %if_bad, label %bad, label %oflag_check
+
+oflag_check:
+  %oflag_p = getelementptr i8, ptr %target, i64 8
+  %oflag = load i64, ptr %oflag_p, align 8
+  %of_extra = and i64 %oflag, -64
+  %of_bad = icmp ne i64 %of_extra, 0
+  br i1 %of_bad, label %bad, label %cflag_check
+
+cflag_check:
+  %cflag_p = getelementptr i8, ptr %target, i64 16
+  %cflag = load i64, ptr %cflag_p, align 8
+  %cf_extra = and i64 %cflag, -256
+  %cf_bad = icmp ne i64 %cf_extra, 0
+  br i1 %cf_bad, label %bad, label %lflag_check
+
+lflag_check:
+  %lflag_p = getelementptr i8, ptr %target, i64 24
+  %lflag = load i64, ptr %lflag_p, align 8
+  %lf_extra = and i64 %lflag, -512
+  %lf_bad = icmp ne i64 %lf_extra, 0
+  br i1 %lf_bad, label %bad, label %speed_check
+
+speed_check:
+  %ispeed_p = getelementptr i8, ptr %target, i64 32
+  %ispeed = load i32, ptr %ispeed_p, align 4
+  %inative = call i32 @__mtrt_linux_speed_to_native(i32 %ispeed)
+  %ibad = icmp eq i32 %inative, -1
+  br i1 %ibad, label %bad, label %ospeed_check
+
+ospeed_check:
+  %ospeed_p = getelementptr i8, ptr %target, i64 36
+  %ospeed = load i32, ptr %ospeed_p, align 4
+  %onative = call i32 @__mtrt_linux_speed_to_native(i32 %ospeed)
+  %obad = icmp eq i32 %onative, -1
+  br i1 %obad, label %bad, label %ok
+
+ok:
+  ret i1 true
+
+bad:
+  ret i1 false
+}
+
+define internal void @__mtrt_linux_store_target_termios(ptr %target, ptr %native) {
+entry:
+  %if32 = load i32, ptr %native, align 4
+  %if64 = zext i32 %if32 to i64
+  %if_target = call i64 @__mtrt_linux_iflag_to_target(i64 %if64)
+  store i64 %if_target, ptr %target, align 8
+  %ofp = getelementptr i8, ptr %native, i64 4
+  %of32 = load i32, ptr %ofp, align 4
+  %of64 = zext i32 %of32 to i64
+  %of_target = call i64 @__mtrt_linux_oflag_to_target(i64 %of64)
+  %of_target_p = getelementptr i8, ptr %target, i64 8
+  store i64 %of_target, ptr %of_target_p, align 8
+  %cfp = getelementptr i8, ptr %native, i64 8
+  %cf32 = load i32, ptr %cfp, align 4
+  %cf64 = zext i32 %cf32 to i64
+  %cf_target = call i64 @__mtrt_linux_cflag_to_target(i64 %cf64)
+  %cf_target_p = getelementptr i8, ptr %target, i64 16
+  store i64 %cf_target, ptr %cf_target_p, align 8
+  %lfp = getelementptr i8, ptr %native, i64 12
+  %lf32 = load i32, ptr %lfp, align 4
+  %lf64 = zext i32 %lf32 to i64
+  %lf_target = call i64 @__mtrt_linux_lflag_to_target(i64 %lf64)
+  %lf_target_p = getelementptr i8, ptr %target, i64 24
+  store i64 %lf_target, ptr %lf_target_p, align 8
+  %os_code64 = and i64 %cf64, 15
+  %os_code = trunc i64 %os_code64 to i32
+  %os_target = call i32 @__mtrt_linux_native_speed_to_target(i32 %os_code)
+  %is_code_shifted = lshr i64 %cf64, 16
+  %is_code64 = and i64 %is_code_shifted, 15
+  %is_code = trunc i64 %is_code64 to i32
+  %is_zero = icmp eq i32 %is_code, 0
+  %is_target_raw = call i32 @__mtrt_linux_native_speed_to_target(i32 %is_code)
+  %is_target = select i1 %is_zero, i32 %os_target, i32 %is_target_raw
+  %is_target_p = getelementptr i8, ptr %target, i64 32
+  store i32 %is_target, ptr %is_target_p, align 4
+  %os_target_p = getelementptr i8, ptr %target, i64 36
+  store i32 %os_target, ptr %os_target_p, align 4
+  call void @__mtrt_linux_copy_native_cc_to_target(ptr %target, ptr %native)
+  ret void
+}
+
+define internal void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %target) {
+entry:
+  %iflag = load i64, ptr %target, align 8
+  %if_native = call i64 @__mtrt_linux_iflag_to_native(i64 %iflag)
+  %if_old32 = load i32, ptr %native, align 4
+  %if_old = zext i32 %if_old32 to i64
+  %if_preserved = and i64 %if_old, -7680
+  %if_new = or i64 %if_preserved, %if_native
+  %if_new32 = trunc i64 %if_new to i32
+  store i32 %if_new32, ptr %native, align 4
+  %of_target_p = getelementptr i8, ptr %target, i64 8
+  %oflag = load i64, ptr %of_target_p, align 8
+  %of_native = call i64 @__mtrt_linux_oflag_to_native(i64 %oflag)
+  %of_native_p = getelementptr i8, ptr %native, i64 4
+  %of_old32 = load i32, ptr %of_native_p, align 4
+  %of_old = zext i32 %of_old32 to i64
+  %of_preserved = and i64 %of_old, -126
+  %of_new = or i64 %of_preserved, %of_native
+  %of_new32 = trunc i64 %of_new to i32
+  store i32 %of_new32, ptr %of_native_p, align 4
+  %cf_target_p = getelementptr i8, ptr %target, i64 16
+  %cflag = load i64, ptr %cf_target_p, align 8
+  %cf_native_flags = call i64 @__mtrt_linux_cflag_to_native(i64 %cflag)
+  %ispeed_p = getelementptr i8, ptr %target, i64 32
+  %ispeed = load i32, ptr %ispeed_p, align 4
+  %is_native32 = call i32 @__mtrt_linux_speed_to_native(i32 %ispeed)
+  %is_native = zext i32 %is_native32 to i64
+  %is_shifted = shl i64 %is_native, 16
+  %ospeed_p = getelementptr i8, ptr %target, i64 36
+  %ospeed = load i32, ptr %ospeed_p, align 4
+  %os_native32 = call i32 @__mtrt_linux_speed_to_native(i32 %ospeed)
+  %os_native = zext i32 %os_native32 to i64
+  %speed_bits = or i64 %is_shifted, %os_native
+  %cf_native = or i64 %cf_native_flags, %speed_bits
+  %cf_native_p = getelementptr i8, ptr %native, i64 8
+  %cf_old32 = load i32, ptr %cf_native_p, align 4
+  %cf_old = zext i32 %cf_old32 to i64
+  %cf_preserved = and i64 %cf_old, -269422592
+  %cf_new = or i64 %cf_preserved, %cf_native
+  %cf_new32 = trunc i64 %cf_new to i32
+  store i32 %cf_new32, ptr %cf_native_p, align 4
+  %lf_target_p = getelementptr i8, ptr %target, i64 24
+  %lflag = load i64, ptr %lf_target_p, align 8
+  %lf_native = call i64 @__mtrt_linux_lflag_to_native(i64 %lflag)
+  %lf_native_p = getelementptr i8, ptr %native, i64 12
+  %lf_old32 = load i32, ptr %lf_native_p, align 4
+  %lf_old = zext i32 %lf_old32 to i64
+  %lf_preserved = and i64 %lf_old, -33276
+  %lf_new = or i64 %lf_preserved, %lf_native
+  %lf_new32 = trunc i64 %lf_new to i32
+  store i32 %lf_new32, ptr %lf_native_p, align 4
+  call void @__mtrt_linux_copy_target_cc_to_native(ptr %native, ptr %target)
+  ret void
+}
+
+define internal i64 @__mtrt_linux_tcsetattr_request(i64 %action) {
+entry:
+  switch i64 %action, label %bad [
+    i64 0, label %now
+    i64 1, label %drain
+    i64 2, label %flush
+  ]
+
+now:
+  ret i64 21506
+
+drain:
+  ret i64 21507
+
+flush:
+  ret i64 21508
+
+bad:
+  ret i64 -1
+}
+
+define i64 @__mtrt_host_tcgetattr(i64 %fd, ptr %termios) {
+entry:
+  %is_null = icmp eq ptr %termios, null
+  br i1 %is_null, label %fault, label %call_get
+
+fault:
+  ret i64 -14
+
+call_get:
+  %native = alloca [36 x i8], align 4
+  %r = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21505, ptr %native)
+  %ok = icmp eq i64 %r, 0
+  br i1 %ok, label %store, label %done
+
+store:
+  call void @__mtrt_linux_store_target_termios(ptr %termios, ptr %native)
+  ret i64 0
+
+done:
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
+entry:
+  %is_null = icmp eq ptr %termios, null
+  br i1 %is_null, label %fault, label %map_action
+
+fault:
+  ret i64 -14
+
+map_action:
+  %request = call i64 @__mtrt_linux_tcsetattr_request(i64 %action)
+  %bad_action = icmp eq i64 %request, -1
+  br i1 %bad_action, label %invalid, label %validate
+
+invalid:
+  ret i64 -22
+
+validate:
+  %valid = call i1 @__mtrt_linux_termios_target_valid(ptr %termios)
+  br i1 %valid, label %read_native, label %invalid
+
+read_native:
+  %native = alloca [36 x i8], align 4
+  %get = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21505, ptr %native)
+  %get_ok = icmp eq i64 %get, 0
+  br i1 %get_ok, label %overlay, label %done
+
+overlay:
+  call void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %termios)
+  %set = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 %request, ptr %native)
+  ret i64 %set
+
+done:
+  ret i64 %get
+}
+
+define i64 @__mtrt_host_tcdrain(i64 %fd) {
+entry:
+  %r = call i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 21513, i64 1)
+  ret i64 %r
+}
+
+define internal i64 @__mtrt_linux_tcflow_action(i64 %action) {
+entry:
+  switch i64 %action, label %bad [
+    i64 0, label %ok0
+    i64 1, label %ok1
+    i64 2, label %ok2
+    i64 3, label %ok3
+  ]
+
+ok0:
+  ret i64 0
+
+ok1:
+  ret i64 1
+
+ok2:
+  ret i64 2
+
+ok3:
+  ret i64 3
+
+bad:
+  ret i64 -1
+}
+
+define i64 @__mtrt_host_tcflow(i64 %fd, i64 %action) {
+entry:
+  %native = call i64 @__mtrt_linux_tcflow_action(i64 %action)
+  %bad = icmp eq i64 %native, -1
+  br i1 %bad, label %invalid, label %call_ioctl
+
+invalid:
+  ret i64 -22
+
+call_ioctl:
+  %r = call i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 21514, i64 %native)
+  ret i64 %r
+}
+
+define internal i64 @__mtrt_linux_tcflush_selector(i64 %selector) {
+entry:
+  switch i64 %selector, label %bad [
+    i64 0, label %ok0
+    i64 1, label %ok1
+    i64 2, label %ok2
+  ]
+
+ok0:
+  ret i64 0
+
+ok1:
+  ret i64 1
+
+ok2:
+  ret i64 2
+
+bad:
+  ret i64 -1
+}
+
+define i64 @__mtrt_host_tcflush(i64 %fd, i64 %selector) {
+entry:
+  %native = call i64 @__mtrt_linux_tcflush_selector(i64 %selector)
+  %bad = icmp eq i64 %native, -1
+  br i1 %bad, label %invalid, label %call_ioctl
+
+invalid:
+  ret i64 -22
+
+call_ioctl:
+  %r = call i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 21515, i64 %native)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_tcsendbreak(i64 %fd, i64 %duration) {
+entry:
+  %is_zero = icmp eq i64 %duration, 0
+  br i1 %is_zero, label %basic, label %duration_ioctl
+
+basic:
+  %r0 = call i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 21513, i64 0)
+  ret i64 %r0
+
+duration_ioctl:
+  %r1 = call i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 21541, i64 %duration)
+  ret i64 %r1
+}
+
+define i64 @__mtrt_host_tcgetpgrp(i64 %fd) {
+entry:
+  %pgrp = alloca i32, align 4
+  %r = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21519, ptr %pgrp)
+  %ok = icmp eq i64 %r, 0
+  br i1 %ok, label %load, label %done
+
+load:
+  %pgrp32 = load i32, ptr %pgrp, align 4
+  %pgrp64 = sext i32 %pgrp32 to i64
+  ret i64 %pgrp64
+
+done:
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_tcsetpgrp(i64 %fd, i64 %pgrp) {
+entry:
+  %slot = alloca i32, align 4
+  %pgrp32 = trunc i64 %pgrp to i32
+  store i32 %pgrp32, ptr %slot, align 4
+  %r = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21520, ptr %slot)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
   %tp_i = ptrtoint ptr %tp to i64
   %r = call i64 @__mtrt_linux_syscall2(i64 114, i64 %clockid, i64 %tp_i)

@@ -57,6 +57,14 @@ declare i64 @__mtrt_host_renameat(i64, ptr, i64, ptr)
 declare i64 @__mtrt_host_rmdir(ptr)
 declare i64 @__mtrt_host_symlink(ptr, ptr)
 declare i64 @__mtrt_host_symlinkat(ptr, i64, ptr)
+declare i64 @__mtrt_host_tcgetattr(i64, ptr)
+declare i64 @__mtrt_host_tcsetattr(i64, i64, ptr)
+declare i64 @__mtrt_host_tcdrain(i64)
+declare i64 @__mtrt_host_tcflow(i64, i64)
+declare i64 @__mtrt_host_tcflush(i64, i64)
+declare i64 @__mtrt_host_tcsendbreak(i64, i64)
+declare i64 @__mtrt_host_tcgetpgrp(i64)
+declare i64 @__mtrt_host_tcsetpgrp(i64, i64)
 declare i64 @__mtrt_host_stat(ptr, ptr)
 declare i64 @__mtrt_host_fstat(i64, ptr)
 declare i64 @__mtrt_host_lstat(ptr, ptr)
@@ -742,6 +750,75 @@ define i32 @symlinkat(ptr %target, i32 %newdirfd, ptr %linkpath) {
 entry:
   %newdirfd64 = sext i32 %newdirfd to i64
   %raw = call i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd64, ptr %linkpath)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcgetattr(i32 %fd, ptr %termios) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_tcgetattr(i64 %fd64, ptr %termios)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcsetattr(i32 %fd, i32 %action, ptr %termios) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %action64 = sext i32 %action to i64
+  %raw = call i64 @__mtrt_host_tcsetattr(i64 %fd64, i64 %action64, ptr %termios)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcdrain(i32 %fd) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_tcdrain(i64 %fd64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcflow(i32 %fd, i32 %action) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %action64 = sext i32 %action to i64
+  %raw = call i64 @__mtrt_host_tcflow(i64 %fd64, i64 %action64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcflush(i32 %fd, i32 %queue_selector) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %selector64 = sext i32 %queue_selector to i64
+  %raw = call i64 @__mtrt_host_tcflush(i64 %fd64, i64 %selector64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcsendbreak(i32 %fd, i32 %duration) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %duration64 = sext i32 %duration to i64
+  %raw = call i64 @__mtrt_host_tcsendbreak(i64 %fd64, i64 %duration64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcgetpgrp(i32 %fd) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_tcgetpgrp(i64 %fd64)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @tcsetpgrp(i32 %fd, i32 %pgrp) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %pgrp64 = sext i32 %pgrp to i64
+  %raw = call i64 @__mtrt_host_tcsetpgrp(i64 %fd64, i64 %pgrp64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
