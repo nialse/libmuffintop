@@ -65,6 +65,7 @@ declare i64 @__mtrt_host_tcflush(i64, i64)
 declare i64 @__mtrt_host_tcsendbreak(i64, i64)
 declare i64 @__mtrt_host_tcgetpgrp(i64)
 declare i64 @__mtrt_host_tcsetpgrp(i64, i64)
+declare i64 @__mtrt_host_isatty(i64)
 declare i64 @__mtrt_host_stat(ptr, ptr)
 declare i64 @__mtrt_host_fstat(i64, ptr)
 declare i64 @__mtrt_host_lstat(ptr, ptr)
@@ -758,6 +759,14 @@ define i32 @tcgetattr(i32 %fd, ptr %termios) {
 entry:
   %fd64 = sext i32 %fd to i64
   %raw = call i64 @__mtrt_host_tcgetattr(i64 %fd64, ptr %termios)
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @isatty(i32 %fd) {
+entry:
+  %fd64 = sext i32 %fd to i64
+  %raw = call i64 @__mtrt_host_isatty(i64 %fd64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }

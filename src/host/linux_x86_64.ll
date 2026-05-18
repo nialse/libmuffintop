@@ -1052,6 +1052,31 @@ done:
   ret i64 %r
 }
 
+define i64 @__mtrt_host_isatty(i64 %fd) {
+entry:
+  %native = alloca [36 x i8], align 4
+  %r = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21505, ptr %native)
+  %ok = icmp eq i64 %r, 0
+  br i1 %ok, label %terminal, label %check_enotty
+
+terminal:
+  ret i64 1
+
+check_enotty:
+  %not_tty = icmp eq i64 %r, -25
+  br i1 %not_tty, label %non_terminal, label %check_enodev
+
+check_enodev:
+  %no_device = icmp eq i64 %r, -19
+  br i1 %no_device, label %non_terminal, label %done
+
+non_terminal:
+  ret i64 0
+
+done:
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
 entry:
   %is_null = icmp eq ptr %termios, null

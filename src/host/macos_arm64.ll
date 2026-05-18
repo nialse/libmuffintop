@@ -59,6 +59,12 @@ entry:
   ret i64 %r
 }
 
+define internal i64 @__mtrt_darwin_continuous_time_trap() {
+entry:
+  %r = call i64 asm sideeffect "mov x16, #-4\0A svc #0x80", "={x0},~{x16},~{memory},~{cc}"()
+  ret i64 %r
+}
+
 define internal i64 @__mtrt_darwin_timebase_info_trap(ptr %info) {
 entry:
   %info_i = ptrtoint ptr %info to i64
@@ -665,27 +671,33 @@ intr_done:
 
 define i64 @__mtrt_host_clock_gettime(i64 %clockid, ptr %tp) {
 entry:
-  %is_realtime = icmp eq i64 %clockid, 0
-  br i1 %is_realtime, label %check_ptr, label %invalid
+  switch i64 %clockid, label %invalid [
+    i64 0, label %check_realtime_ptr
+    i64 1, label %check_monotonic_ptr
+  ]
 
 invalid:
   ret i64 -22
 
-check_ptr:
-  %is_null = icmp eq ptr %tp, null
-  br i1 %is_null, label %fault, label %call_time
+check_realtime_ptr:
+  %realtime_null = icmp eq ptr %tp, null
+  br i1 %realtime_null, label %fault, label %call_realtime
+
+check_monotonic_ptr:
+  %monotonic_null = icmp eq ptr %tp, null
+  br i1 %monotonic_null, label %fault, label %call_monotonic
 
 fault:
   ret i64 -14
 
-call_time:
+call_realtime:
   %tv = alloca [16 x i8], align 8
   %tv_i = ptrtoint ptr %tv to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 116, i64 %tv_i, i64 0, i64 0)
-  %ok = icmp eq i64 %r, 0
-  br i1 %ok, label %store, label %done
+  %realtime_ok = icmp eq i64 %r, 0
+  br i1 %realtime_ok, label %store_realtime, label %done
 
-store:
+store_realtime:
   %sec_p = getelementptr i8, ptr %tv, i64 0
   %usec_p = getelementptr i8, ptr %tv, i64 8
   %sec = load i64, ptr %sec_p, align 8
@@ -700,6 +712,43 @@ store:
 
 done:
   ret i64 %r
+
+call_monotonic:
+  %timebase = alloca [8 x i8], align 4
+  %timebase_r = call i64 @__mtrt_darwin_timebase_info_trap(ptr %timebase)
+  %timebase_ok = icmp eq i64 %timebase_r, 0
+  br i1 %timebase_ok, label %load_timebase, label %bad_timebase
+
+bad_timebase:
+  ret i64 -22
+
+load_timebase:
+  %numer_p = getelementptr i8, ptr %timebase, i64 0
+  %denom_p = getelementptr i8, ptr %timebase, i64 4
+  %numer32 = load i32, ptr %numer_p, align 4
+  %denom32 = load i32, ptr %denom_p, align 4
+  %numer_zero = icmp eq i32 %numer32, 0
+  %denom_zero = icmp eq i32 %denom32, 0
+  %bad_factor = or i1 %numer_zero, %denom_zero
+  br i1 %bad_factor, label %bad_timebase, label %store_monotonic
+
+store_monotonic:
+  %ticks = call i64 @__mtrt_darwin_continuous_time_trap()
+  %numer = zext i32 %numer32 to i64
+  %denom = zext i32 %denom32 to i64
+  %ticks_q = udiv i64 %ticks, %denom
+  %ticks_r = urem i64 %ticks, %denom
+  %ns_q = mul i64 %ticks_q, %numer
+  %ns_r_mul = mul i64 %ticks_r, %numer
+  %ns_r = udiv i64 %ns_r_mul, %denom
+  %ns = add i64 %ns_q, %ns_r
+  %mono_sec = udiv i64 %ns, 1000000000
+  %mono_nsec = urem i64 %ns, 1000000000
+  %mono_sec_p = getelementptr i8, ptr %tp, i64 0
+  %mono_nsec_p = getelementptr i8, ptr %tp, i64 8
+  store i64 %mono_sec, ptr %mono_sec_p, align 8
+  store i64 %mono_nsec, ptr %mono_nsec_p, align 8
+  ret i64 0
 }
 
 define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
@@ -1973,6 +2022,31 @@ done:
   ret i64 %r
 }
 
+define i64 @__mtrt_host_isatty(i64 %fd) {
+entry:
+  %native = alloca [72 x i8], align 8
+  %r = call i64 @__mtrt_darwin_ioctl_ptr(i64 %fd, i64 1078490131, ptr %native)
+  %ok = icmp eq i64 %r, 0
+  br i1 %ok, label %terminal, label %check_enotty
+
+terminal:
+  ret i64 1
+
+check_enotty:
+  %not_tty = icmp eq i64 %r, -25
+  br i1 %not_tty, label %non_terminal, label %check_enodev
+
+check_enodev:
+  %no_device = icmp eq i64 %r, -19
+  br i1 %no_device, label %non_terminal, label %done
+
+non_terminal:
+  ret i64 0
+
+done:
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
 entry:
   %is_null = icmp eq ptr %termios, null
@@ -2132,7 +2206,64 @@ entry:
 
 define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
 entry:
-  ret i64 -38
+  switch i64 %clockid, label %invalid [
+    i64 0, label %realtime
+    i64 1, label %monotonic
+  ]
+
+invalid:
+  ret i64 -22
+
+realtime:
+  %realtime_null = icmp eq ptr %tp, null
+  br i1 %realtime_null, label %done, label %store_realtime
+
+store_realtime:
+  %realtime_sec_p = getelementptr i8, ptr %tp, i64 0
+  %realtime_nsec_p = getelementptr i8, ptr %tp, i64 8
+  store i64 0, ptr %realtime_sec_p, align 8
+  store i64 1000, ptr %realtime_nsec_p, align 8
+  ret i64 0
+
+monotonic:
+  %monotonic_null = icmp eq ptr %tp, null
+  br i1 %monotonic_null, label %done, label %load_monotonic_res
+
+load_monotonic_res:
+  %timebase = alloca [8 x i8], align 4
+  %timebase_r = call i64 @__mtrt_darwin_timebase_info_trap(ptr %timebase)
+  %timebase_ok = icmp eq i64 %timebase_r, 0
+  br i1 %timebase_ok, label %compute_monotonic_res, label %bad_timebase
+
+bad_timebase:
+  ret i64 -22
+
+compute_monotonic_res:
+  %numer_p = getelementptr i8, ptr %timebase, i64 0
+  %denom_p = getelementptr i8, ptr %timebase, i64 4
+  %numer32 = load i32, ptr %numer_p, align 4
+  %denom32 = load i32, ptr %denom_p, align 4
+  %numer_zero = icmp eq i32 %numer32, 0
+  %denom_zero = icmp eq i32 %denom32, 0
+  %bad_factor = or i1 %numer_zero, %denom_zero
+  br i1 %bad_factor, label %bad_timebase, label %store_monotonic_res
+
+store_monotonic_res:
+  %numer = zext i32 %numer32 to i64
+  %denom = zext i32 %denom32 to i64
+  %denom_minus_one = sub i64 %denom, 1
+  %ceil_numer = add i64 %numer, %denom_minus_one
+  %res_ns = udiv i64 %ceil_numer, %denom
+  %res_sec = udiv i64 %res_ns, 1000000000
+  %res_nsec = urem i64 %res_ns, 1000000000
+  %monotonic_sec_p = getelementptr i8, ptr %tp, i64 0
+  %monotonic_nsec_p = getelementptr i8, ptr %tp, i64 8
+  store i64 %res_sec, ptr %monotonic_sec_p, align 8
+  store i64 %res_nsec, ptr %monotonic_nsec_p, align 8
+  ret i64 0
+
+done:
+  ret i64 0
 }
 
 define i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
