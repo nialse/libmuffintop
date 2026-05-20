@@ -104,6 +104,75 @@ declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
 declare i64 @__mtrt_host_times(ptr)
 declare i64 @__mtrt_host_utimes(ptr, ptr)
 
+define internal i1 @__mtrt_open_flags_supported(i32 %flags) {
+entry:
+  %known = and i32 %flags, 1731
+  %unknown = xor i32 %flags, %known
+  %bits_ok = icmp eq i32 %unknown, 0
+  %access = and i32 %flags, 3
+  %access_ok = icmp ne i32 %access, 3
+  %ok = and i1 %bits_ok, %access_ok
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_mmap_flags_supported(i32 %flags) {
+entry:
+  %known = and i32 %flags, 51
+  %unknown = xor i32 %flags, %known
+  %bits_ok = icmp eq i32 %unknown, 0
+  %sharing = and i32 %flags, 3
+  %is_shared = icmp eq i32 %sharing, 1
+  %is_private = icmp eq i32 %sharing, 2
+  %sharing_ok = or i1 %is_shared, %is_private
+  %ok = and i1 %bits_ok, %sharing_ok
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_msync_flags_supported(i32 %flags) {
+entry:
+  %known = and i32 %flags, 7
+  %unknown = xor i32 %flags, %known
+  %bits_ok = icmp eq i32 %unknown, 0
+  %sync_selector = and i32 %flags, 5
+  %is_async = icmp eq i32 %sync_selector, 1
+  %is_sync = icmp eq i32 %sync_selector, 4
+  %selector_ok = or i1 %is_async, %is_sync
+  %ok = and i1 %bits_ok, %selector_ok
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_at_nofollow_flags_supported(i32 %flags) {
+entry:
+  %known = and i32 %flags, 256
+  %unknown = xor i32 %flags, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_faccessat_flags_supported(i32 %flags) {
+entry:
+  %known = and i32 %flags, 768
+  %unknown = xor i32 %flags, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_linkat_flags_supported(i32 %flags) {
+entry:
+  %is_zero = icmp eq i32 %flags, 0
+  %is_follow = icmp eq i32 %flags, 1024
+  %ok = or i1 %is_zero, %is_follow
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_unlinkat_flags_supported(i32 %flags) {
+entry:
+  %is_zero = icmp eq i32 %flags, 0
+  %is_removedir = icmp eq i32 %flags, 512
+  %ok = or i1 %is_zero, %is_removedir
+  ret i1 %ok
+}
+
 define i32 @getpid() {
 entry:
   %raw = call i64 @__mtrt_host_getpid()
@@ -312,21 +381,35 @@ entry:
 
 define i32 @open(ptr %path, i32 %flags, i32 %mode) {
 entry:
+  %flags_ok = call i1 @__mtrt_open_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %flags64 = sext i32 %flags to i64
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_open(ptr %path, i64 %flags64, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @openat(i32 %dirfd, ptr %path, i32 %flags, i32 %mode) {
 entry:
+  %flags_ok = call i1 @__mtrt_open_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %flags64 = sext i32 %flags to i64
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_openat(i64 %dirfd64, ptr %path, i64 %flags64, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i64 @posix_getdents(i32 %fd, ptr %buf, i64 %nbyte, i32 %flags) {
@@ -368,11 +451,18 @@ entry:
 
 define i32 @unlinkat(i32 %dirfd, ptr %path, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_unlinkat_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_unlinkat(i64 %dirfd64, ptr %path, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @access(ptr %path, i32 %mode) {
@@ -385,12 +475,19 @@ entry:
 
 define i32 @faccessat(i32 %dirfd, ptr %path, i32 %mode, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_faccessat_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %mode64 = sext i32 %mode to i64
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_faccessat(i64 %dirfd64, ptr %path, i64 %mode64, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @chmod(ptr %path, i32 %mode) {
@@ -412,12 +509,19 @@ entry:
 
 define i32 @fchmodat(i32 %dirfd, ptr %path, i32 %mode, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_at_nofollow_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %mode64 = sext i32 %mode to i64
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_fchmodat(i64 %dirfd64, ptr %path, i64 %mode64, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @chown(ptr %path, i32 %uid, i32 %gid) {
@@ -464,6 +568,10 @@ entry:
 
 define i32 @fchownat(i32 %dirfd, ptr %path, i32 %uid, i32 %gid, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_at_nofollow_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %uid64 = sext i32 %uid to i64
   %gid64 = sext i32 %gid to i64
@@ -471,6 +579,9 @@ entry:
   %raw = call i64 @__mtrt_host_fchownat(i64 %dirfd64, ptr %path, i64 %uid64, i64 %gid64, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i64 @fcntl(i32 %fd, i32 %cmd, i64 %arg) {
@@ -499,11 +610,18 @@ entry:
 
 define i32 @fstatat(i32 %dirfd, ptr %path, ptr %buf, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_at_nofollow_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_fstatat(i64 %dirfd64, ptr %path, ptr %buf, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @ftruncate(i32 %fd, i64 %length) {
@@ -546,12 +664,19 @@ entry:
 
 define i32 @linkat(i32 %olddirfd, ptr %oldpath, i32 %newdirfd, ptr %newpath, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_linkat_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %olddirfd64 = sext i32 %olddirfd to i64
   %newdirfd64 = sext i32 %newdirfd to i64
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_linkat(i64 %olddirfd64, ptr %oldpath, i64 %newdirfd64, ptr %newpath, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @lstat(ptr %path, ptr %buf) {
@@ -603,11 +728,18 @@ entry:
 
 define i64 @mmap(i64 %addr, i64 %length, i32 %prot, i32 %flags, i32 %fd, i64 %offset) {
 entry:
+  %flags_ok = call i1 @__mtrt_mmap_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %prot64 = sext i32 %prot to i64
   %flags64 = sext i32 %flags to i64
   %fd64 = sext i32 %fd to i64
   %raw = call i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot64, i64 %flags64, i64 %fd64, i64 %offset)
   ret i64 %raw
+
+invalid:
+  ret i64 -22
 }
 
 define i32 @mprotect(i64 %addr, i64 %length, i32 %prot) {
@@ -620,10 +752,17 @@ entry:
 
 define i32 @msync(i64 %addr, i64 %length, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_msync_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @munlock(i64 %addr, i64 %length) {

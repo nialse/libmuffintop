@@ -10,6 +10,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @__mtrt_platform_uname_sys_len = constant i64 6, align 8
 @__mtrt_platform_uname_all = constant [27 x i8] c"Linux muffintop 0 0 x86_64\0A", align 1
 @__mtrt_platform_uname_all_len = constant i64 27, align 8
+@__mtrt_poc_sigcont = constant i32 18, align 4
 
 define internal i64 @__mtrt_linux_syscall0(i64 %nr) {
 entry:

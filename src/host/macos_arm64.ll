@@ -7,6 +7,7 @@ target triple = "arm64-apple-macosx13.0.0"
 @__mtrt_platform_uname_sys_len = constant i64 7, align 8
 @__mtrt_platform_uname_all = constant [27 x i8] c"Darwin muffintop 0 0 arm64\0A", align 1
 @__mtrt_platform_uname_all_len = constant i64 27, align 8
+@__mtrt_poc_sigcont = constant i32 19, align 4
 
 define internal i64 @__mtrt_darwin_syscall0(i64 %nr) {
 entry:
@@ -275,7 +276,12 @@ bad:
 
 define internal i32 @__mtrt_darwin_open_flags_from_target(i32 %flags) {
 entry:
+  %known = and i32 %flags, 1731
+  %unknown = xor i32 %flags, %known
+  %bits_ok = icmp eq i32 %unknown, 0
   %access = and i32 %flags, 3
+  %access_ok = icmp ne i32 %access, 3
+  %ok = and i1 %bits_ok, %access_ok
   %creat_bits = and i32 %flags, 64
   %has_creat = icmp ne i32 %creat_bits, 0
   %creat_value = select i1 %has_creat, i32 512, i32 0
@@ -292,27 +298,46 @@ entry:
   %has_append = icmp ne i32 %append_bits, 0
   %append_value = select i1 %has_append, i32 8, i32 0
   %mapped = or i32 %with_trunc, %append_value
-  ret i32 %mapped
+  %ret = select i1 %ok, i32 %mapped, i32 -1
+  ret i32 %ret
 }
 
 define internal i32 @__mtrt_darwin_mmap_flags_from_target(i32 %flags) {
 entry:
+  %known = and i32 %flags, 51
+  %unknown = xor i32 %flags, %known
+  %bits_ok = icmp eq i32 %unknown, 0
+  %sharing = and i32 %flags, 3
+  %is_shared = icmp eq i32 %sharing, 1
+  %is_private = icmp eq i32 %sharing, 2
+  %sharing_ok = or i1 %is_shared, %is_private
+  %ok = and i1 %bits_ok, %sharing_ok
   %anon_bits = and i32 %flags, 32
   %has_anon = icmp ne i32 %anon_bits, 0
   %without_anon = and i32 %flags, -33
   %anon_value = select i1 %has_anon, i32 4096, i32 0
   %mapped = or i32 %without_anon, %anon_value
-  ret i32 %mapped
+  %ret = select i1 %ok, i32 %mapped, i32 -1
+  ret i32 %ret
 }
 
 define internal i32 @__mtrt_darwin_msync_flags_from_target(i32 %flags) {
 entry:
+  %known = and i32 %flags, 7
+  %unknown = xor i32 %flags, %known
+  %bits_ok = icmp eq i32 %unknown, 0
+  %sync_selector = and i32 %flags, 5
+  %is_async = icmp eq i32 %sync_selector, 1
+  %is_sync = icmp eq i32 %sync_selector, 4
+  %selector_ok = or i1 %is_async, %is_sync
+  %ok = and i1 %bits_ok, %selector_ok
   %sync_bits = and i32 %flags, 4
   %has_sync = icmp ne i32 %sync_bits, 0
   %without_sync = and i32 %flags, -5
   %sync_value = select i1 %has_sync, i32 16, i32 0
   %mapped = or i32 %without_sync, %sync_value
-  ret i32 %mapped
+  %ret = select i1 %ok, i32 %mapped, i32 -1
+  ret i32 %ret
 }
 
 define internal i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd) {
@@ -866,6 +891,13 @@ entry:
   %flags32 = trunc i64 %flags to i32
   %mode32 = trunc i64 %mode to i32
   %mapped_flags = call i32 @__mtrt_darwin_open_flags_from_target(i32 %flags32)
+  %bad_flags = icmp eq i32 %mapped_flags, -1
+  br i1 %bad_flags, label %invalid, label %call_open
+
+invalid:
+  ret i64 -22
+
+call_open:
   %path_i = ptrtoint ptr %path to i64
   %flags64 = sext i32 %mapped_flags to i64
   %mode64 = sext i32 %mode32 to i64
@@ -879,6 +911,13 @@ entry:
   %flags32 = trunc i64 %flags to i32
   %mode32 = trunc i64 %mode to i32
   %mapped_flags = call i32 @__mtrt_darwin_open_flags_from_target(i32 %flags32)
+  %bad_flags = icmp eq i32 %mapped_flags, -1
+  br i1 %bad_flags, label %invalid, label %call_openat
+
+invalid:
+  ret i64 -22
+
+call_openat:
   %dirfd64 = sext i32 %dirfd32 to i64
   %path_i = ptrtoint ptr %path to i64
   %flags64 = sext i32 %mapped_flags to i64
@@ -2416,6 +2455,13 @@ entry:
   %flags32 = trunc i64 %flags to i32
   %fd32 = trunc i64 %fd to i32
   %mapped_flags = call i32 @__mtrt_darwin_mmap_flags_from_target(i32 %flags32)
+  %bad_flags = icmp eq i32 %mapped_flags, -1
+  br i1 %bad_flags, label %invalid, label %call_mmap
+
+invalid:
+  ret i64 -22
+
+call_mmap:
   %prot64 = sext i32 %prot32 to i64
   %flags64 = sext i32 %mapped_flags to i64
   %fd64 = sext i32 %fd32 to i64
@@ -2435,6 +2481,13 @@ define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
 entry:
   %flags32 = trunc i64 %flags to i32
   %mapped_flags = call i32 @__mtrt_darwin_msync_flags_from_target(i32 %flags32)
+  %bad_flags = icmp eq i32 %mapped_flags, -1
+  br i1 %bad_flags, label %invalid, label %call_msync
+
+invalid:
+  ret i64 -22
+
+call_msync:
   %flags64 = sext i32 %mapped_flags to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 65, i64 %addr, i64 %length, i64 %flags64)
   ret i64 %r
@@ -2499,13 +2552,33 @@ entry:
 
 define i64 @__mtrt_host_sigpending(ptr %sigset) {
 entry:
-  %sigset_i = ptrtoint ptr %sigset to i64
-  %r = call i64 @__mtrt_darwin_syscall1(i64 52, i64 %sigset_i)
+  %darwin_sigset = alloca i32, align 4
+  %is_null = icmp eq ptr %sigset, null
+  br i1 %is_null, label %fault, label %call_sigpending
+
+fault:
+  ret i64 -14
+
+call_sigpending:
+  %darwin_sigset_i = ptrtoint ptr %darwin_sigset to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 52, i64 %darwin_sigset_i)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %done, label %store_sigset
+
+store_sigset:
+  %darwin_value = load i32, ptr %darwin_sigset, align 4
+  %target_value = zext i32 %darwin_value to i64
+  store i64 %target_value, ptr %sigset, align 8
+  ret i64 %r
+
+done:
   ret i64 %r
 }
 
 define i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
 entry:
+  %darwin_set = alloca i32, align 4
+  %darwin_oldset = alloca i32, align 4
   %mapped_how = call i32 @__mtrt_darwin_sigprocmask_how_from_target(i64 %how)
   %bad_how = icmp eq i32 %mapped_how, -1
   br i1 %bad_how, label %invalid, label %call_sigprocmask
@@ -2514,17 +2587,58 @@ invalid:
   ret i64 -22
 
 call_sigprocmask:
-  %set_i = ptrtoint ptr %set to i64
-  %oldset_i = ptrtoint ptr %oldset to i64
+  %set_is_null = icmp eq ptr %set, null
+  br i1 %set_is_null, label %prep_oldset, label %copy_set
+
+copy_set:
+  %target_set = load i64, ptr %set, align 8
+  %native_set = trunc i64 %target_set to i32
+  store i32 %native_set, ptr %darwin_set, align 4
+  %darwin_set_i = ptrtoint ptr %darwin_set to i64
+  br label %prep_oldset
+
+prep_oldset:
+  %set_i = phi i64 [ 0, %call_sigprocmask ], [ %darwin_set_i, %copy_set ]
+  %oldset_is_null = icmp eq ptr %oldset, null
+  br i1 %oldset_is_null, label %do_call, label %copy_oldset
+
+copy_oldset:
+  %darwin_oldset_i = ptrtoint ptr %darwin_oldset to i64
+  br label %do_call
+
+do_call:
+  %oldset_i = phi i64 [ 0, %prep_oldset ], [ %darwin_oldset_i, %copy_oldset ]
   %how64 = sext i32 %mapped_how to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 48, i64 %how64, i64 %set_i, i64 %oldset_i)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %done, label %maybe_store_oldset
+
+maybe_store_oldset:
+  br i1 %oldset_is_null, label %done, label %store_oldset
+
+store_oldset:
+  %darwin_old = load i32, ptr %darwin_oldset, align 4
+  %target_old = zext i32 %darwin_old to i64
+  store i64 %target_old, ptr %oldset, align 8
+  ret i64 %r
+
+done:
   ret i64 %r
 }
 
 define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
 entry:
-  %sigmask_i = ptrtoint ptr %sigmask to i64
-  %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %sigmask_i)
+  %is_null = icmp eq ptr %sigmask, null
+  br i1 %is_null, label %fault, label %load_mask
+
+fault:
+  ret i64 -14
+
+load_mask:
+  %target_mask = load i64, ptr %sigmask, align 8
+  %darwin_mask32 = trunc i64 %target_mask to i32
+  %darwin_mask = zext i32 %darwin_mask32 to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %darwin_mask)
   ret i64 %r
 }
 
