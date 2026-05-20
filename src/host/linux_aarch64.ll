@@ -6,6 +6,10 @@ target triple = "aarch64-unknown-linux-gnu"
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
 @.mtrt_empty_path = private unnamed_addr constant [1 x i8] zeroinitializer
+@__mtrt_platform_uname_sys = constant [6 x i8] c"Linux\0A", align 1
+@__mtrt_platform_uname_sys_len = constant i64 6, align 8
+@__mtrt_platform_uname_all = constant [28 x i8] c"Linux muffintop 0 0 aarch64\0A", align 1
+@__mtrt_platform_uname_all_len = constant i64 28, align 8
 
 define internal i64 @__mtrt_linux_syscall0(i64 %nr) {
 entry:
@@ -326,8 +330,18 @@ define i64 @__mtrt_host_getppid() {
   ret i64 %r
 }
 
+define i64 @__mtrt_host_getuid() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 174)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_geteuid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 175)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getgid() {
+  %r = call i64 @__mtrt_linux_syscall0(i64 176)
   ret i64 %r
 }
 

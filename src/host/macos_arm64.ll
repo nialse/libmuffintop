@@ -3,6 +3,10 @@ target triple = "arm64-apple-macosx13.0.0"
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
 @.mtrt_dot = private unnamed_addr constant [2 x i8] c".\00"
+@__mtrt_platform_uname_sys = constant [7 x i8] c"Darwin\0A", align 1
+@__mtrt_platform_uname_sys_len = constant i64 7, align 8
+@__mtrt_platform_uname_all = constant [27 x i8] c"Darwin muffintop 0 0 arm64\0A", align 1
+@__mtrt_platform_uname_all_len = constant i64 27, align 8
 
 define internal i64 @__mtrt_darwin_syscall0(i64 %nr) {
 entry:
@@ -520,9 +524,21 @@ entry:
   ret i64 %r
 }
 
+define i64 @__mtrt_host_getuid() {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall0(i64 24)
+  ret i64 %r
+}
+
 define i64 @__mtrt_host_geteuid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 25)
+  ret i64 %r
+}
+
+define i64 @__mtrt_host_getgid() {
+entry:
+  %r = call i64 @__mtrt_darwin_syscall0(i64 47)
   ret i64 %r
 }
 

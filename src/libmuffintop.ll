@@ -9,7 +9,9 @@ target triple = "x86_64-unknown-linux-gnu"
 
 declare i64 @__mtrt_host_getpid()
 declare i64 @__mtrt_host_getppid()
+declare i64 @__mtrt_host_getuid()
 declare i64 @__mtrt_host_geteuid()
+declare i64 @__mtrt_host_getgid()
 declare i64 @__mtrt_host_fork()
 declare i64 @__mtrt_host_wait4(i64, ptr, i64)
 declare void @__mtrt_host_exit(i64)
@@ -116,9 +118,23 @@ entry:
   ret i32 %ret
 }
 
+define i32 @getuid() {
+entry:
+  %raw = call i64 @__mtrt_host_getuid()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
 define i32 @geteuid() {
 entry:
   %raw = call i64 @__mtrt_host_geteuid()
+  %ret = trunc i64 %raw to i32
+  ret i32 %ret
+}
+
+define i32 @getgid() {
+entry:
+  %raw = call i64 @__mtrt_host_getgid()
   %ret = trunc i64 %raw to i32
   ret i32 %ret
 }
