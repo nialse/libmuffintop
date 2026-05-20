@@ -1286,14 +1286,58 @@ define i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem) {
   ret i64 %r
 }
 
+define internal i64 @__mtrt_linux_clockid_from_target(i64 %clockid) {
+entry:
+  switch i64 %clockid, label %invalid [
+    i64 0, label %realtime
+    i64 1, label %monotonic
+  ]
+
+realtime:
+  ret i64 0
+
+monotonic:
+  ret i64 1
+
+invalid:
+  ret i64 -22
+}
+
 define i64 @__mtrt_host_clock_gettime(i64 %clockid, ptr %tp) {
+entry:
+  %native_clockid = call i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
+  %bad_clockid = icmp slt i64 %native_clockid, 0
+  br i1 %bad_clockid, label %invalid_clockid, label %call_clock
+
+call_clock:
   %tp_i = ptrtoint ptr %tp to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 228, i64 %clockid, i64 %tp_i)
+  %r = call i64 @__mtrt_linux_syscall2(i64 228, i64 %native_clockid, i64 %tp_i)
   ret i64 %r
+
+invalid_clockid:
+  ret i64 %native_clockid
+}
+
+define internal i64 @__mtrt_linux_signal_to_native(i64 %sig) {
+entry:
+  switch i64 %sig, label %same [
+    i64 17, label %sigstop
+    i64 19, label %sigcont
+  ]
+
+sigstop:
+  ret i64 19
+
+sigcont:
+  ret i64 18
+
+same:
+  ret i64 %sig
 }
 
 define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
-  %r = call i64 @__mtrt_linux_syscall2(i64 62, i64 %pid, i64 %sig)
+  %native_sig = call i64 @__mtrt_linux_signal_to_native(i64 %sig)
+  %r = call i64 @__mtrt_linux_syscall2(i64 62, i64 %pid, i64 %native_sig)
   ret i64 %r
 }
 
@@ -1576,15 +1620,40 @@ define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
 }
 
 define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
+entry:
+  %native_clockid = call i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
+  %bad_clockid = icmp slt i64 %native_clockid, 0
+  br i1 %bad_clockid, label %invalid_clockid, label %call_clock
+
+call_clock:
   %tp_i = ptrtoint ptr %tp to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 229, i64 %clockid, i64 %tp_i)
+  %r = call i64 @__mtrt_linux_syscall2(i64 229, i64 %native_clockid, i64 %tp_i)
   ret i64 %r
+
+invalid_clockid:
+  ret i64 %native_clockid
 }
 
 define i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
+entry:
+  %native_clockid = call i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
+  %bad_clockid = icmp slt i64 %native_clockid, 0
+  br i1 %bad_clockid, label %invalid_clockid, label %check_settable
+
+check_settable:
+  %is_monotonic = icmp eq i64 %clockid, 1
+  br i1 %is_monotonic, label %invalid_monotonic, label %call_clock
+
+call_clock:
   %tp_i = ptrtoint ptr %tp to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 227, i64 %clockid, i64 %tp_i)
+  %r = call i64 @__mtrt_linux_syscall2(i64 227, i64 %native_clockid, i64 %tp_i)
   ret i64 %r
+
+invalid_clockid:
+  ret i64 %native_clockid
+
+invalid_monotonic:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
