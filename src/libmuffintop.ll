@@ -141,6 +141,96 @@ entry:
   ret i1 %ok
 }
 
+define internal i1 @__mtrt_file_mode_supported(i32 %mode) {
+entry:
+  %known = and i32 %mode, 4095
+  %unknown = xor i32 %mode, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_access_mode_supported(i32 %mode) {
+entry:
+  %known = and i32 %mode, 7
+  %unknown = xor i32 %mode, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_prot_supported(i32 %prot) {
+entry:
+  %known = and i32 %prot, 7
+  %unknown = xor i32 %prot, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_madvise_supported(i32 %advice) {
+entry:
+  %nonnegative = icmp sge i32 %advice, 0
+  %in_range = icmp sle i32 %advice, 4
+  %ok = and i1 %nonnegative, %in_range
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_lseek_whence_supported(i32 %whence) {
+entry:
+  %nonnegative = icmp sge i32 %whence, 0
+  %in_range = icmp sle i32 %whence, 2
+  %ok = and i1 %nonnegative, %in_range
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_waitpid_options_supported(i32 %options) {
+entry:
+  %known = and i32 %options, 11
+  %unknown = xor i32 %options, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_pipe2_flags_supported(i32 %flags) {
+entry:
+  %known = and i32 %flags, 526336
+  %unknown = xor i32 %flags, %known
+  %ok = icmp eq i32 %unknown, 0
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_fcntl_cmd_supported(i32 %cmd) {
+entry:
+  %nonnegative = icmp sge i32 %cmd, 0
+  %in_range = icmp sle i32 %cmd, 7
+  %ok = and i1 %nonnegative, %in_range
+  ret i1 %ok
+}
+
+define internal i1 @__mtrt_fcntl_arg_supported(i32 %cmd, i64 %arg) {
+entry:
+  switch i32 %cmd, label %ok [
+    i32 2, label %setfd
+    i32 4, label %setfl
+  ]
+
+setfd:
+  %fd_known = and i64 %arg, 1
+  %fd_unknown = xor i64 %arg, %fd_known
+  %fd_ok = icmp eq i64 %fd_unknown, 0
+  ret i1 %fd_ok
+
+setfl:
+  %fl_known = and i64 %arg, 3075
+  %fl_unknown = xor i64 %arg, %fl_known
+  %fl_bits_ok = icmp eq i64 %fl_unknown, 0
+  %fl_access = and i64 %arg, 3
+  %fl_access_ok = icmp ne i64 %fl_access, 3
+  %fl_ok = and i1 %fl_bits_ok, %fl_access_ok
+  ret i1 %fl_ok
+
+ok:
+  ret i1 true
+}
+
 define internal i1 @__mtrt_at_nofollow_flags_supported(i32 %flags) {
 entry:
   %known = and i32 %flags, 256
@@ -217,11 +307,18 @@ entry:
 
 define i32 @waitpid(i32 %pid, ptr %status, i32 %options) {
 entry:
+  %options_ok = call i1 @__mtrt_waitpid_options_supported(i32 %options)
+  br i1 %options_ok, label %call_host, label %invalid
+
+call_host:
   %pid64 = sext i32 %pid to i64
   %opt64 = sext i32 %options to i64
   %raw = call i64 @__mtrt_host_wait4(i64 %pid64, ptr %status, i64 %opt64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define void @_exit(i32 %status) {
@@ -350,10 +447,17 @@ entry:
 
 define i32 @umask(i32 %mask) {
 entry:
+  %mask_ok = call i1 @__mtrt_file_mode_supported(i32 %mask)
+  br i1 %mask_ok, label %call_host, label %invalid
+
+call_host:
   %mask64 = sext i32 %mask to i64
   %raw = call i64 @__mtrt_host_umask(i64 %mask64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @pipe(ptr %fds) {
@@ -382,7 +486,9 @@ entry:
 define i32 @open(ptr %path, i32 %flags, i32 %mode) {
 entry:
   %flags_ok = call i1 @__mtrt_open_flags_supported(i32 %flags)
-  br i1 %flags_ok, label %call_host, label %invalid
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  %ok = and i1 %flags_ok, %mode_ok
+  br i1 %ok, label %call_host, label %invalid
 
 call_host:
   %flags64 = sext i32 %flags to i64
@@ -398,7 +504,9 @@ invalid:
 define i32 @openat(i32 %dirfd, ptr %path, i32 %flags, i32 %mode) {
 entry:
   %flags_ok = call i1 @__mtrt_open_flags_supported(i32 %flags)
-  br i1 %flags_ok, label %call_host, label %invalid
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  %ok = and i1 %flags_ok, %mode_ok
+  br i1 %ok, label %call_host, label %invalid
 
 call_host:
   %dirfd64 = sext i32 %dirfd to i64
@@ -422,10 +530,17 @@ entry:
 
 define i64 @lseek(i32 %fd, i64 %offset, i32 %whence) {
 entry:
+  %whence_ok = call i1 @__mtrt_lseek_whence_supported(i32 %whence)
+  br i1 %whence_ok, label %call_host, label %invalid
+
+call_host:
   %fd64 = sext i32 %fd to i64
   %whence64 = sext i32 %whence to i64
   %raw = call i64 @__mtrt_host_lseek(i64 %fd64, i64 %offset, i64 %whence64)
   ret i64 %raw
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @pread(i32 %fd, ptr %buf, i64 %count, i64 %offset) {
@@ -467,16 +582,25 @@ invalid:
 
 define i32 @access(ptr %path, i32 %mode) {
 entry:
+  %mode_ok = call i1 @__mtrt_access_mode_supported(i32 %mode)
+  br i1 %mode_ok, label %call_host, label %invalid
+
+call_host:
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_access(ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @faccessat(i32 %dirfd, ptr %path, i32 %mode, i32 %flags) {
 entry:
   %flags_ok = call i1 @__mtrt_faccessat_flags_supported(i32 %flags)
-  br i1 %flags_ok, label %call_host, label %invalid
+  %mode_ok = call i1 @__mtrt_access_mode_supported(i32 %mode)
+  %ok = and i1 %flags_ok, %mode_ok
+  br i1 %ok, label %call_host, label %invalid
 
 call_host:
   %dirfd64 = sext i32 %dirfd to i64
@@ -492,25 +616,41 @@ invalid:
 
 define i32 @chmod(ptr %path, i32 %mode) {
 entry:
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  br i1 %mode_ok, label %call_host, label %invalid
+
+call_host:
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_chmod(ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @fchmod(i32 %fd, i32 %mode) {
 entry:
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  br i1 %mode_ok, label %call_host, label %invalid
+
+call_host:
   %fd64 = sext i32 %fd to i64
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_fchmod(i64 %fd64, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @fchmodat(i32 %dirfd, ptr %path, i32 %mode, i32 %flags) {
 entry:
   %flags_ok = call i1 @__mtrt_at_nofollow_flags_supported(i32 %flags)
-  br i1 %flags_ok, label %call_host, label %invalid
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  %ok = and i1 %flags_ok, %mode_ok
+  br i1 %ok, label %call_host, label %invalid
 
 call_host:
   %dirfd64 = sext i32 %dirfd to i64
@@ -586,10 +726,19 @@ invalid:
 
 define i64 @fcntl(i32 %fd, i32 %cmd, i64 %arg) {
 entry:
+  %cmd_ok = call i1 @__mtrt_fcntl_cmd_supported(i32 %cmd)
+  %arg_ok = call i1 @__mtrt_fcntl_arg_supported(i32 %cmd, i64 %arg)
+  %ok = and i1 %cmd_ok, %arg_ok
+  br i1 %ok, label %call_host, label %invalid
+
+call_host:
   %fd64 = sext i32 %fd to i64
   %cmd64 = sext i32 %cmd to i64
   %raw = call i64 @__mtrt_host_fcntl(i64 %fd64, i64 %cmd64, i64 %arg)
   ret i64 %raw
+
+invalid:
+  ret i64 -22
 }
 
 define i32 @fdatasync(i32 %fd) {
@@ -688,35 +837,63 @@ entry:
 
 define i32 @madvise(i64 %addr, i64 %length, i32 %advice) {
 entry:
+  %advice_ok = call i1 @__mtrt_madvise_supported(i32 %advice)
+  br i1 %advice_ok, label %call_host, label %invalid
+
+call_host:
   %advice64 = sext i32 %advice to i64
   %raw = call i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @mkdir(ptr %path, i32 %mode) {
 entry:
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  br i1 %mode_ok, label %call_host, label %invalid
+
+call_host:
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_mkdir(ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @mkdirat(i32 %dirfd, ptr %path, i32 %mode) {
 entry:
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  br i1 %mode_ok, label %call_host, label %invalid
+
+call_host:
   %dirfd64 = sext i32 %dirfd to i64
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_mkdirat(i64 %dirfd64, ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @mkfifo(ptr %path, i32 %mode) {
 entry:
+  %mode_ok = call i1 @__mtrt_file_mode_supported(i32 %mode)
+  br i1 %mode_ok, label %call_host, label %invalid
+
+call_host:
   %mode64 = sext i32 %mode to i64
   %raw = call i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @mlock(i64 %addr, i64 %length) {
@@ -729,7 +906,9 @@ entry:
 define i64 @mmap(i64 %addr, i64 %length, i32 %prot, i32 %flags, i32 %fd, i64 %offset) {
 entry:
   %flags_ok = call i1 @__mtrt_mmap_flags_supported(i32 %flags)
-  br i1 %flags_ok, label %call_host, label %invalid
+  %prot_ok = call i1 @__mtrt_prot_supported(i32 %prot)
+  %ok = and i1 %flags_ok, %prot_ok
+  br i1 %ok, label %call_host, label %invalid
 
 call_host:
   %prot64 = sext i32 %prot to i64
@@ -744,10 +923,17 @@ invalid:
 
 define i32 @mprotect(i64 %addr, i64 %length, i32 %prot) {
 entry:
+  %prot_ok = call i1 @__mtrt_prot_supported(i32 %prot)
+  br i1 %prot_ok, label %call_host, label %invalid
+
+call_host:
   %prot64 = sext i32 %prot to i64
   %raw = call i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i32 @msync(i64 %addr, i64 %length, i32 %flags) {
@@ -788,10 +974,17 @@ entry:
 
 define i32 @pipe2(ptr %fds, i32 %flags) {
 entry:
+  %flags_ok = call i1 @__mtrt_pipe2_flags_supported(i32 %flags)
+  br i1 %flags_ok, label %call_host, label %invalid
+
+call_host:
   %flags64 = sext i32 %flags to i64
   %raw = call i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags64)
   %ret = trunc i64 %raw to i32
   ret i32 %ret
+
+invalid:
+  ret i32 -22
 }
 
 define i64 @readlink(ptr %path, ptr %buf, i64 %size) {

@@ -79,6 +79,28 @@ entry:
   ret i64 %dev
 }
 
+define internal i32 @__mtrt_linux_mode_from_native(i32 %mode) {
+entry:
+  %perm = and i32 %mode, 4095
+  %type = and i32 %mode, 61440
+  switch i32 %type, label %unknown [
+    i32 4096, label %known
+    i32 8192, label %known
+    i32 16384, label %known
+    i32 24576, label %known
+    i32 32768, label %known
+    i32 40960, label %known
+    i32 49152, label %known
+  ]
+
+known:
+  %ret = or i32 %perm, %type
+  ret i32 %ret
+
+unknown:
+  ret i32 %perm
+}
+
 define internal void @__mtrt_linux_store_statx(ptr %out, ptr %sx) {
 entry:
   %blksize_p = getelementptr i8, ptr %sx, i64 4
@@ -93,7 +115,8 @@ entry:
   %gid = load i32, ptr %gid_p, align 4
   %mode_p = getelementptr i8, ptr %sx, i64 28
   %mode16 = load i16, ptr %mode_p, align 2
-  %mode = zext i16 %mode16 to i32
+  %mode_raw = zext i16 %mode16 to i32
+  %mode = call i32 @__mtrt_linux_mode_from_native(i32 %mode_raw)
   %ino_p = getelementptr i8, ptr %sx, i64 32
   %ino = load i64, ptr %ino_p, align 8
   %size_p = getelementptr i8, ptr %sx, i64 40
@@ -1274,10 +1297,73 @@ define i64 @__mtrt_host_fork() {
   ret i64 %r
 }
 
+define internal i32 @__mtrt_linux_wait_status_from_native(i32 %status) {
+entry:
+  %low = and i32 %status, 255
+  %is_exited = icmp eq i32 %low, 0
+  br i1 %is_exited, label %preserve, label %check_continued
+
+check_continued:
+  %is_continued = icmp eq i32 %status, 65535
+  br i1 %is_continued, label %preserve, label %check_stopped
+
+check_stopped:
+  %is_stopped = icmp eq i32 %low, 127
+  br i1 %is_stopped, label %stopped, label %signaled
+
+stopped:
+  %stopped_shifted = lshr i32 %status, 8
+  %stopped_native32 = and i32 %stopped_shifted, 255
+  %stopped_native = zext i32 %stopped_native32 to i64
+  %stopped_target = call i64 @__mtrt_linux_signal_from_native(i64 %stopped_native)
+  %stopped_target32 = trunc i64 %stopped_target to i32
+  %stopped_target_shifted = shl i32 %stopped_target32, 8
+  %stopped_upper = and i32 %status, -65536
+  %stopped_with_sig = or i32 %stopped_upper, %stopped_target_shifted
+  %stopped_ret = or i32 %stopped_with_sig, 127
+  ret i32 %stopped_ret
+
+signaled:
+  %signaled_native32 = and i32 %status, 127
+  %signaled_native = zext i32 %signaled_native32 to i64
+  %signaled_target = call i64 @__mtrt_linux_signal_from_native(i64 %signaled_native)
+  %signaled_target32 = trunc i64 %signaled_target to i32
+  %signaled_core = and i32 %status, 128
+  %signaled_upper = and i32 %status, -256
+  %signaled_with_core = or i32 %signaled_upper, %signaled_core
+  %signaled_ret = or i32 %signaled_with_core, %signaled_target32
+  ret i32 %signaled_ret
+
+preserve:
+  ret i32 %status
+}
+
 define i64 @__mtrt_host_wait4(i64 %pid, ptr %status, i64 %options) {
+entry:
+  %known = and i64 %options, 11
+  %unknown = xor i64 %options, %known
+  %options_ok = icmp eq i64 %unknown, 0
+  br i1 %options_ok, label %call_wait4, label %invalid
+
+call_wait4:
   %status_i = ptrtoint ptr %status to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 61, i64 %pid, i64 %status_i, i64 %options, i64 0)
+  %r = call i64 @__mtrt_linux_syscall4(i64 61, i64 %pid, i64 %status_i, i64 %known, i64 0)
+  %waited = icmp sgt i64 %r, 0
+  %status_present = icmp ne ptr %status, null
+  %translate = and i1 %waited, %status_present
+  br i1 %translate, label %translate_status, label %done
+
+translate_status:
+  %native_status = load i32, ptr %status, align 4
+  %target_status = call i32 @__mtrt_linux_wait_status_from_native(i32 %native_status)
+  store i32 %target_status, ptr %status, align 4
   ret i64 %r
+
+done:
+  ret i64 %r
+
+invalid:
+  ret i64 -22
 }
 
 define void @__mtrt_host_exit(i64 %status) {
@@ -1866,8 +1952,18 @@ invalid:
 }
 
 define i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
+entry:
+  %whence_ok_low = icmp sge i64 %whence, 0
+  %whence_ok_high = icmp sle i64 %whence, 2
+  %whence_ok = and i1 %whence_ok_low, %whence_ok_high
+  br i1 %whence_ok, label %call_lseek, label %invalid
+
+call_lseek:
   %r = call i64 @__mtrt_linux_syscall3(i64 8, i64 %fd, i64 %offset, i64 %whence)
   ret i64 %r
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
@@ -2092,9 +2188,312 @@ define i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 
   ret i64 %r
 }
 
+define internal i64 @__mtrt_linux_fcntl_cmd_from_target(i64 %cmd) {
+entry:
+  switch i64 %cmd, label %bad [
+    i64 0, label %dupfd
+    i64 1, label %getfd
+    i64 2, label %setfd
+    i64 3, label %getfl
+    i64 4, label %setfl
+    i64 5, label %getlk
+    i64 6, label %setlk
+    i64 7, label %setlkw
+  ]
+
+dupfd:
+  ret i64 0
+
+getfd:
+  ret i64 1
+
+setfd:
+  ret i64 2
+
+getfl:
+  ret i64 3
+
+setfl:
+  ret i64 4
+
+getlk:
+  ret i64 5
+
+setlk:
+  ret i64 6
+
+setlkw:
+  ret i64 7
+
+bad:
+  ret i64 -1
+}
+
+define internal i64 @__mtrt_linux_fd_flags_from_native(i64 %native) {
+entry:
+  %clo = and i64 %native, 1
+  ret i64 %clo
+}
+
+define internal i64 @__mtrt_linux_fd_flags_to_native(i64 %target) {
+entry:
+  %known = and i64 %target, 1
+  %unknown = xor i64 %target, %known
+  %ok = icmp eq i64 %unknown, 0
+  %ret = select i1 %ok, i64 %known, i64 -1
+  ret i64 %ret
+}
+
+define internal i64 @__mtrt_linux_status_flags_from_native(i64 %native) {
+entry:
+  %access = and i64 %native, 3
+  %append_bits = and i64 %native, 1024
+  %has_append = icmp ne i64 %append_bits, 0
+  %append = select i1 %has_append, i64 1024, i64 0
+  %nonblock_bits = and i64 %native, 2048
+  %has_nonblock = icmp ne i64 %nonblock_bits, 0
+  %nonblock = select i1 %has_nonblock, i64 2048, i64 0
+  %with_append = or i64 %access, %append
+  %ret = or i64 %with_append, %nonblock
+  ret i64 %ret
+}
+
+define internal i64 @__mtrt_linux_status_flags_to_native(i64 %target) {
+entry:
+  %known = and i64 %target, 3075
+  %unknown = xor i64 %target, %known
+  %bits_ok = icmp eq i64 %unknown, 0
+  %access = and i64 %target, 3
+  %access_ok = icmp ne i64 %access, 3
+  %ok = and i1 %bits_ok, %access_ok
+  %append_bits = and i64 %target, 1024
+  %has_append = icmp ne i64 %append_bits, 0
+  %append = select i1 %has_append, i64 1024, i64 0
+  %nonblock_bits = and i64 %target, 2048
+  %has_nonblock = icmp ne i64 %nonblock_bits, 0
+  %nonblock = select i1 %has_nonblock, i64 2048, i64 0
+  %mapped = or i64 %append, %nonblock
+  %ret = select i1 %ok, i64 %mapped, i64 -1
+  ret i64 %ret
+}
+
+define internal i64 @__mtrt_linux_flock_type_to_native(i16 %target) {
+entry:
+  switch i16 %target, label %bad [
+    i16 0, label %rd
+    i16 1, label %wr
+    i16 2, label %un
+  ]
+
+rd:
+  ret i64 0
+
+wr:
+  ret i64 1
+
+un:
+  ret i64 2
+
+bad:
+  ret i64 -1
+}
+
+define internal i64 @__mtrt_linux_flock_type_from_native(i16 %native) {
+entry:
+  switch i16 %native, label %bad [
+    i16 0, label %rd
+    i16 1, label %wr
+    i16 2, label %un
+  ]
+
+rd:
+  ret i64 0
+
+wr:
+  ret i64 1
+
+un:
+  ret i64 2
+
+bad:
+  ret i64 -1
+}
+
+define internal i64 @__mtrt_linux_flock_target_to_native(ptr %target, ptr %native) {
+entry:
+  %target_type = load i16, ptr %target, align 2
+  %native_type = call i64 @__mtrt_linux_flock_type_to_native(i16 %target_type)
+  %bad_type = icmp slt i64 %native_type, 0
+  br i1 %bad_type, label %invalid, label %check_whence
+
+check_whence:
+  %target_whence_p = getelementptr i8, ptr %target, i64 2
+  %target_whence = load i16, ptr %target_whence_p, align 2
+  %whence64 = sext i16 %target_whence to i64
+  %whence_low = icmp sge i64 %whence64, 0
+  %whence_high = icmp sle i64 %whence64, 2
+  %whence_ok = and i1 %whence_low, %whence_high
+  br i1 %whence_ok, label %copy, label %invalid
+
+copy:
+  %native_type16 = trunc i64 %native_type to i16
+  store i16 %native_type16, ptr %native, align 2
+  %native_whence_p = getelementptr i8, ptr %native, i64 2
+  store i16 %target_whence, ptr %native_whence_p, align 2
+  %target_start_p = getelementptr i8, ptr %target, i64 8
+  %start = load i64, ptr %target_start_p, align 8
+  %native_start_p = getelementptr i8, ptr %native, i64 8
+  store i64 %start, ptr %native_start_p, align 8
+  %target_len_p = getelementptr i8, ptr %target, i64 16
+  %len = load i64, ptr %target_len_p, align 8
+  %native_len_p = getelementptr i8, ptr %native, i64 16
+  store i64 %len, ptr %native_len_p, align 8
+  %target_pid_p = getelementptr i8, ptr %target, i64 24
+  %pid = load i32, ptr %target_pid_p, align 4
+  %native_pid_p = getelementptr i8, ptr %native, i64 24
+  store i32 %pid, ptr %native_pid_p, align 4
+  ret i64 0
+
+invalid:
+  ret i64 -22
+}
+
+define internal i64 @__mtrt_linux_flock_native_to_target(ptr %target, ptr %native) {
+entry:
+  %native_type = load i16, ptr %native, align 2
+  %target_type = call i64 @__mtrt_linux_flock_type_from_native(i16 %native_type)
+  %bad_type = icmp slt i64 %target_type, 0
+  br i1 %bad_type, label %invalid, label %check_whence
+
+check_whence:
+  %native_whence_p = getelementptr i8, ptr %native, i64 2
+  %native_whence = load i16, ptr %native_whence_p, align 2
+  %whence64 = sext i16 %native_whence to i64
+  %whence_low = icmp sge i64 %whence64, 0
+  %whence_high = icmp sle i64 %whence64, 2
+  %whence_ok = and i1 %whence_low, %whence_high
+  br i1 %whence_ok, label %copy, label %invalid
+
+copy:
+  %target_type16 = trunc i64 %target_type to i16
+  store i16 %target_type16, ptr %target, align 2
+  %target_whence_p = getelementptr i8, ptr %target, i64 2
+  store i16 %native_whence, ptr %target_whence_p, align 2
+  %native_start_p = getelementptr i8, ptr %native, i64 8
+  %start = load i64, ptr %native_start_p, align 8
+  %target_start_p = getelementptr i8, ptr %target, i64 8
+  store i64 %start, ptr %target_start_p, align 8
+  %native_len_p = getelementptr i8, ptr %native, i64 16
+  %len = load i64, ptr %native_len_p, align 8
+  %target_len_p = getelementptr i8, ptr %target, i64 16
+  store i64 %len, ptr %target_len_p, align 8
+  %native_pid_p = getelementptr i8, ptr %native, i64 24
+  %pid = load i32, ptr %native_pid_p, align 4
+  %target_pid_p = getelementptr i8, ptr %target, i64 24
+  store i32 %pid, ptr %target_pid_p, align 4
+  ret i64 0
+
+invalid:
+  ret i64 -22
+}
+
 define i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
-  %r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %cmd, i64 %arg)
-  ret i64 %r
+entry:
+  %native_cmd = call i64 @__mtrt_linux_fcntl_cmd_from_target(i64 %cmd)
+  %bad_cmd = icmp slt i64 %native_cmd, 0
+  br i1 %bad_cmd, label %invalid, label %dispatch
+
+dispatch:
+  switch i64 %cmd, label %scalar [
+    i64 1, label %getfd
+    i64 2, label %setfd
+    i64 3, label %getfl
+    i64 4, label %setfl
+    i64 5, label %lock
+    i64 6, label %lock
+    i64 7, label %lock
+  ]
+
+scalar:
+  %scalar_r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %native_cmd, i64 %arg)
+  ret i64 %scalar_r
+
+getfd:
+  %getfd_r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %native_cmd, i64 %arg)
+  %getfd_bad = icmp slt i64 %getfd_r, 0
+  br i1 %getfd_bad, label %getfd_done, label %map_getfd
+
+map_getfd:
+  %target_fd_flags = call i64 @__mtrt_linux_fd_flags_from_native(i64 %getfd_r)
+  ret i64 %target_fd_flags
+
+getfd_done:
+  ret i64 %getfd_r
+
+setfd:
+  %native_fd_flags = call i64 @__mtrt_linux_fd_flags_to_native(i64 %arg)
+  %bad_fd_flags = icmp slt i64 %native_fd_flags, 0
+  br i1 %bad_fd_flags, label %invalid, label %call_setfd
+
+call_setfd:
+  %setfd_r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %native_cmd, i64 %native_fd_flags)
+  ret i64 %setfd_r
+
+getfl:
+  %getfl_r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %native_cmd, i64 %arg)
+  %getfl_bad = icmp slt i64 %getfl_r, 0
+  br i1 %getfl_bad, label %getfl_done, label %map_getfl
+
+map_getfl:
+  %target_status_flags = call i64 @__mtrt_linux_status_flags_from_native(i64 %getfl_r)
+  ret i64 %target_status_flags
+
+getfl_done:
+  ret i64 %getfl_r
+
+setfl:
+  %native_status_flags = call i64 @__mtrt_linux_status_flags_to_native(i64 %arg)
+  %bad_status_flags = icmp slt i64 %native_status_flags, 0
+  br i1 %bad_status_flags, label %invalid, label %call_setfl
+
+call_setfl:
+  %setfl_r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %native_cmd, i64 %native_status_flags)
+  ret i64 %setfl_r
+
+lock:
+  %target_flock = inttoptr i64 %arg to ptr
+  %lock_null = icmp eq ptr %target_flock, null
+  br i1 %lock_null, label %fault, label %copy_lock_in
+
+copy_lock_in:
+  %native_flock = alloca [32 x i8], align 8
+  %prep = call i64 @__mtrt_linux_flock_target_to_native(ptr %target_flock, ptr %native_flock)
+  %prep_bad = icmp slt i64 %prep, 0
+  br i1 %prep_bad, label %prep_done, label %call_lock
+
+call_lock:
+  %native_flock_i = ptrtoint ptr %native_flock to i64
+  %lock_r = call i64 @__mtrt_linux_syscall3(i64 72, i64 %fd, i64 %native_cmd, i64 %native_flock_i)
+  %is_getlk = icmp eq i64 %cmd, 5
+  %lock_ok = icmp eq i64 %lock_r, 0
+  %copy_out = and i1 %is_getlk, %lock_ok
+  br i1 %copy_out, label %copy_lock_out, label %lock_done
+
+copy_lock_out:
+  %copy = call i64 @__mtrt_linux_flock_native_to_target(ptr %target_flock, ptr %native_flock)
+  ret i64 %copy
+
+lock_done:
+  ret i64 %lock_r
+
+prep_done:
+  ret i64 %prep
+
+fault:
+  ret i64 -14
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_fdatasync(i64 %fd) {
@@ -2129,8 +2528,18 @@ define i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
 }
 
 define i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
+entry:
+  %advice_ok_low = icmp sge i64 %advice, 0
+  %advice_ok_high = icmp sle i64 %advice, 4
+  %advice_ok = and i1 %advice_ok_low, %advice_ok_high
+  br i1 %advice_ok, label %call_madvise, label %invalid
+
+call_madvise:
   %r = call i64 @__mtrt_linux_syscall3(i64 28, i64 %addr, i64 %length, i64 %advice)
   ret i64 %r
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
@@ -2144,8 +2553,18 @@ define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 
 }
 
 define i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
+entry:
+  %known = and i64 %prot, 7
+  %unknown = xor i64 %prot, %known
+  %prot_ok = icmp eq i64 %unknown, 0
+  br i1 %prot_ok, label %call_mprotect, label %invalid
+
+call_mprotect:
   %r = call i64 @__mtrt_linux_syscall3(i64 10, i64 %addr, i64 %length, i64 %prot)
   ret i64 %r
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
@@ -2169,9 +2588,19 @@ define i64 @__mtrt_host_pause() {
 }
 
 define i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
+entry:
+  %known = and i64 %flags, 526336
+  %unknown = xor i64 %flags, %known
+  %flags_ok = icmp eq i64 %unknown, 0
+  br i1 %flags_ok, label %call_pipe2, label %invalid
+
+call_pipe2:
   %fds_i = ptrtoint ptr %fds to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 293, i64 %fds_i, i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall2(i64 293, i64 %fds_i, i64 %known)
   ret i64 %r
+
+invalid:
+  ret i64 -22
 }
 
 define i64 @__mtrt_host_sched_yield() {
