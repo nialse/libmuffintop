@@ -1098,7 +1098,7 @@ define i64 @__mtrt_host_faccessat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) 
 
 define i64 @__mtrt_host_chmod(ptr %path, i64 %mode) {
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 452, i64 -100, i64 %path_i, i64 %mode, i64 0)
+  %r = call i64 @__mtrt_linux_syscall3(i64 53, i64 -100, i64 %path_i, i64 %mode)
   ret i64 %r
 }
 
@@ -1109,8 +1109,16 @@ define i64 @__mtrt_host_fchmod(i64 %fd, i64 %mode) {
 
 define i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 452, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
-  ret i64 %r
+  %has_flags = icmp ne i64 %flags, 0
+  br i1 %has_flags, label %call_fchmodat2, label %call_fchmodat
+
+call_fchmodat:
+  %legacy = call i64 @__mtrt_linux_syscall3(i64 53, i64 %dirfd, i64 %path_i, i64 %mode)
+  ret i64 %legacy
+
+call_fchmodat2:
+  %modern = call i64 @__mtrt_linux_syscall4(i64 452, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
+  ret i64 %modern
 }
 
 define i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
