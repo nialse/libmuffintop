@@ -8,6 +8,12 @@ target triple = "arm64-apple-macosx13.0.0"
 @__mtrt_platform_uname_all = constant [27 x i8] c"Darwin muffintop 0 0 arm64\0A", align 1
 @__mtrt_platform_uname_all_len = constant i64 27, align 8
 @__mtrt_poc_sigcont = constant i32 19, align 4
+@__mtrt_darwin_handler_sig7 = internal global i64 0, align 8
+@__mtrt_darwin_handler_sig10 = internal global i64 0, align 8
+@__mtrt_darwin_handler_sig12 = internal global i64 0, align 8
+@__mtrt_darwin_flags_sig7 = internal global i64 0, align 8
+@__mtrt_darwin_flags_sig10 = internal global i64 0, align 8
+@__mtrt_darwin_flags_sig12 = internal global i64 0, align 8
 
 define internal i64 @__mtrt_darwin_syscall0(i64 %nr) {
 entry:
@@ -441,6 +447,380 @@ invalid:
   ret i32 -1
 }
 
+define internal i64 @__mtrt_darwin_signal_to_native(i64 %sig) {
+entry:
+  switch i64 %sig, label %invalid [
+    i64 0, label %same
+    i64 1, label %same
+    i64 2, label %same
+    i64 3, label %same
+    i64 4, label %same
+    i64 5, label %same
+    i64 6, label %same
+    i64 7, label %sigbus
+    i64 8, label %same
+    i64 9, label %same
+    i64 10, label %sigusr1
+    i64 11, label %same
+    i64 12, label %sigusr2
+    i64 13, label %same
+    i64 14, label %same
+    i64 15, label %same
+    i64 17, label %same
+    i64 18, label %same
+    i64 19, label %same
+    i64 20, label %same
+    i64 21, label %same
+    i64 22, label %same
+  ]
+
+sigbus:
+  ret i64 10
+
+sigusr1:
+  ret i64 30
+
+sigusr2:
+  ret i64 31
+
+same:
+  ret i64 %sig
+
+invalid:
+  ret i64 -22
+}
+
+define internal i64 @__mtrt_darwin_signal_from_native(i64 %sig) {
+entry:
+  switch i64 %sig, label %same [
+    i64 10, label %sigbus
+    i64 30, label %sigusr1
+    i64 31, label %sigusr2
+  ]
+
+sigbus:
+  ret i64 7
+
+sigusr1:
+  ret i64 10
+
+sigusr2:
+  ret i64 12
+
+same:
+  ret i64 %sig
+}
+
+define internal i64 @__mtrt_darwin_sigset_to_native(i64 %target) {
+entry:
+  %known = and i64 %target, 4161535
+  %unknown = xor i64 %target, %known
+  %ok = icmp eq i64 %unknown, 0
+  br i1 %ok, label %map, label %invalid
+
+invalid:
+  ret i64 -22
+
+map:
+  %same_low = and i64 %target, 63
+  %same_fpe = and i64 %target, 128
+  %same_kill = and i64 %target, 256
+  %same_segv = and i64 %target, 1024
+  %same_pipe = and i64 %target, 4096
+  %same_alrm = and i64 %target, 8192
+  %same_term = and i64 %target, 16384
+  %same_job = and i64 %target, 4128768
+  %base0 = or i64 %same_low, %same_fpe
+  %base1 = or i64 %base0, %same_kill
+  %base2 = or i64 %base1, %same_segv
+  %base3 = or i64 %base2, %same_pipe
+  %base4 = or i64 %base3, %same_alrm
+  %base5 = or i64 %base4, %same_term
+  %base = or i64 %base5, %same_job
+  %target_bus = and i64 %target, 64
+  %has_bus = icmp ne i64 %target_bus, 0
+  %bus = select i1 %has_bus, i64 512, i64 0
+  %target_usr1 = and i64 %target, 512
+  %has_usr1 = icmp ne i64 %target_usr1, 0
+  %usr1 = select i1 %has_usr1, i64 536870912, i64 0
+  %target_usr2 = and i64 %target, 2048
+  %has_usr2 = icmp ne i64 %target_usr2, 0
+  %usr2 = select i1 %has_usr2, i64 1073741824, i64 0
+  %r0 = or i64 %base, %bus
+  %r1 = or i64 %r0, %usr1
+  %r2 = or i64 %r1, %usr2
+  ret i64 %r2
+}
+
+define internal i64 @__mtrt_darwin_sigset_from_native(i64 %native) {
+entry:
+  %same_low = and i64 %native, 63
+  %same_fpe = and i64 %native, 128
+  %same_kill = and i64 %native, 256
+  %same_segv = and i64 %native, 1024
+  %same_pipe = and i64 %native, 4096
+  %same_alrm = and i64 %native, 8192
+  %same_term = and i64 %native, 16384
+  %same_job = and i64 %native, 4128768
+  %base0 = or i64 %same_low, %same_fpe
+  %base1 = or i64 %base0, %same_kill
+  %base2 = or i64 %base1, %same_segv
+  %base3 = or i64 %base2, %same_pipe
+  %base4 = or i64 %base3, %same_alrm
+  %base5 = or i64 %base4, %same_term
+  %base = or i64 %base5, %same_job
+  %native_bus = and i64 %native, 512
+  %has_bus = icmp ne i64 %native_bus, 0
+  %bus = select i1 %has_bus, i64 64, i64 0
+  %native_usr1 = and i64 %native, 536870912
+  %has_usr1 = icmp ne i64 %native_usr1, 0
+  %usr1 = select i1 %has_usr1, i64 512, i64 0
+  %native_usr2 = and i64 %native, 1073741824
+  %has_usr2 = icmp ne i64 %native_usr2, 0
+  %usr2 = select i1 %has_usr2, i64 2048, i64 0
+  %r0 = or i64 %base, %bus
+  %r1 = or i64 %r0, %usr1
+  %r2 = or i64 %r1, %usr2
+  ret i64 %r2
+}
+
+define internal i64 @__mtrt_darwin_sigaction_flags_to_native(i64 %target) {
+entry:
+  %known = and i64 %target, 127
+  %unknown = xor i64 %target, %known
+  %ok = icmp eq i64 %unknown, 0
+  br i1 %ok, label %map, label %invalid
+
+invalid:
+  ret i64 -22
+
+map:
+  %nocldstop_bit = and i64 %target, 1
+  %has_nocldstop = icmp ne i64 %nocldstop_bit, 0
+  %nocldstop = select i1 %has_nocldstop, i64 8, i64 0
+  %nocldwait_bit = and i64 %target, 2
+  %has_nocldwait = icmp ne i64 %nocldwait_bit, 0
+  %nocldwait = select i1 %has_nocldwait, i64 32, i64 0
+  %siginfo_bit = and i64 %target, 4
+  %has_siginfo = icmp ne i64 %siginfo_bit, 0
+  %siginfo = select i1 %has_siginfo, i64 64, i64 0
+  %restart_bit = and i64 %target, 8
+  %has_restart = icmp ne i64 %restart_bit, 0
+  %restart = select i1 %has_restart, i64 2, i64 0
+  %onstack_bit = and i64 %target, 16
+  %has_onstack = icmp ne i64 %onstack_bit, 0
+  %onstack = select i1 %has_onstack, i64 1, i64 0
+  %reset_bit = and i64 %target, 32
+  %has_reset = icmp ne i64 %reset_bit, 0
+  %reset = select i1 %has_reset, i64 4, i64 0
+  %nodefer_bit = and i64 %target, 64
+  %has_nodefer = icmp ne i64 %nodefer_bit, 0
+  %nodefer = select i1 %has_nodefer, i64 16, i64 0
+  %r0 = or i64 %nocldstop, %nocldwait
+  %r1 = or i64 %r0, %siginfo
+  %r2 = or i64 %r1, %restart
+  %r3 = or i64 %r2, %onstack
+  %r4 = or i64 %r3, %reset
+  %r5 = or i64 %r4, %nodefer
+  ret i64 %r5
+}
+
+define internal i64 @__mtrt_darwin_sigaction_flags_from_native(i64 %native) {
+entry:
+  %nocldstop_bit = and i64 %native, 8
+  %has_nocldstop = icmp ne i64 %nocldstop_bit, 0
+  %nocldstop = select i1 %has_nocldstop, i64 1, i64 0
+  %nocldwait_bit = and i64 %native, 32
+  %has_nocldwait = icmp ne i64 %nocldwait_bit, 0
+  %nocldwait = select i1 %has_nocldwait, i64 2, i64 0
+  %siginfo_bit = and i64 %native, 64
+  %has_siginfo = icmp ne i64 %siginfo_bit, 0
+  %siginfo = select i1 %has_siginfo, i64 4, i64 0
+  %restart_bit = and i64 %native, 2
+  %has_restart = icmp ne i64 %restart_bit, 0
+  %restart = select i1 %has_restart, i64 8, i64 0
+  %onstack_bit = and i64 %native, 1
+  %has_onstack = icmp ne i64 %onstack_bit, 0
+  %onstack = select i1 %has_onstack, i64 16, i64 0
+  %reset_bit = and i64 %native, 4
+  %has_reset = icmp ne i64 %reset_bit, 0
+  %reset = select i1 %has_reset, i64 32, i64 0
+  %nodefer_bit = and i64 %native, 16
+  %has_nodefer = icmp ne i64 %nodefer_bit, 0
+  %nodefer = select i1 %has_nodefer, i64 64, i64 0
+  %r0 = or i64 %nocldstop, %nocldwait
+  %r1 = or i64 %r0, %siginfo
+  %r2 = or i64 %r1, %restart
+  %r3 = or i64 %r2, %onstack
+  %r4 = or i64 %r3, %reset
+  %r5 = or i64 %r4, %nodefer
+  ret i64 %r5
+}
+
+define internal void @__mtrt_darwin_dispatch_target_signal(i64 %target_sig, ptr %handler_slot, ptr %flags_slot, ptr %native_info, ptr %ucontext) {
+entry:
+  %handler_i = load i64, ptr %handler_slot, align 8
+  %is_dfl = icmp eq i64 %handler_i, 0
+  %is_ign = icmp eq i64 %handler_i, 1
+  %is_special = or i1 %is_dfl, %is_ign
+  br i1 %is_special, label %done, label %check_siginfo
+
+check_siginfo:
+  %flags = load i64, ptr %flags_slot, align 8
+  %siginfo_bit = and i64 %flags, 4
+  %has_siginfo = icmp ne i64 %siginfo_bit, 0
+  br i1 %has_siginfo, label %call_siginfo, label %call_simple
+
+call_simple:
+  %handler = inttoptr i64 %handler_i to ptr
+  %target_sig32 = trunc i64 %target_sig to i32
+  call void %handler(i32 %target_sig32)
+  br label %done
+
+call_siginfo:
+  %target_info = alloca [16 x i8], align 4
+  %target_sig32_info_store = trunc i64 %target_sig to i32
+  store i32 %target_sig32_info_store, ptr %target_info, align 4
+  %target_errno_p = getelementptr i8, ptr %target_info, i64 4
+  store i32 0, ptr %target_errno_p, align 4
+  %target_code_p = getelementptr i8, ptr %target_info, i64 8
+  store i32 0, ptr %target_code_p, align 4
+  %target_pad_p = getelementptr i8, ptr %target_info, i64 12
+  store i32 0, ptr %target_pad_p, align 4
+  %handler3 = inttoptr i64 %handler_i to ptr
+  %target_sig32_info = trunc i64 %target_sig to i32
+  call void %handler3(i32 %target_sig32_info, ptr %target_info, ptr %ucontext)
+  br label %done
+
+done:
+  ret void
+}
+
+define internal void @__mtrt_darwin_dispatch_sig7(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_darwin_dispatch_target_signal(i64 7, ptr @__mtrt_darwin_handler_sig7, ptr @__mtrt_darwin_flags_sig7, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal void @__mtrt_darwin_dispatch_sig10(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_darwin_dispatch_target_signal(i64 10, ptr @__mtrt_darwin_handler_sig10, ptr @__mtrt_darwin_flags_sig10, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal void @__mtrt_darwin_dispatch_sig12(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_darwin_dispatch_target_signal(i64 12, ptr @__mtrt_darwin_handler_sig12, ptr @__mtrt_darwin_flags_sig12, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal i64 @__mtrt_darwin_sigaction_dispatcher(i64 %sig) {
+entry:
+  switch i64 %sig, label %none [
+    i64 7, label %sig7
+    i64 10, label %sig10
+    i64 12, label %sig12
+  ]
+
+sig7:
+  %d7 = ptrtoint ptr @__mtrt_darwin_dispatch_sig7 to i64
+  ret i64 %d7
+
+sig10:
+  %d10 = ptrtoint ptr @__mtrt_darwin_dispatch_sig10 to i64
+  ret i64 %d10
+
+sig12:
+  %d12 = ptrtoint ptr @__mtrt_darwin_dispatch_sig12 to i64
+  ret i64 %d12
+
+none:
+  ret i64 0
+}
+
+define internal i64 @__mtrt_darwin_load_target_handler(i64 %sig) {
+entry:
+  switch i64 %sig, label %none [
+    i64 7, label %sig7
+    i64 10, label %sig10
+    i64 12, label %sig12
+  ]
+
+sig7:
+  %h7 = load i64, ptr @__mtrt_darwin_handler_sig7, align 8
+  ret i64 %h7
+
+sig10:
+  %h10 = load i64, ptr @__mtrt_darwin_handler_sig10, align 8
+  ret i64 %h10
+
+sig12:
+  %h12 = load i64, ptr @__mtrt_darwin_handler_sig12, align 8
+  ret i64 %h12
+
+none:
+  ret i64 0
+}
+
+define internal i64 @__mtrt_darwin_load_target_flags(i64 %sig) {
+entry:
+  switch i64 %sig, label %none [
+    i64 7, label %sig7
+    i64 10, label %sig10
+    i64 12, label %sig12
+  ]
+
+sig7:
+  %f7 = load i64, ptr @__mtrt_darwin_flags_sig7, align 8
+  ret i64 %f7
+
+sig10:
+  %f10 = load i64, ptr @__mtrt_darwin_flags_sig10, align 8
+  ret i64 %f10
+
+sig12:
+  %f12 = load i64, ptr @__mtrt_darwin_flags_sig12, align 8
+  ret i64 %f12
+
+none:
+  ret i64 0
+}
+
+define internal void @__mtrt_darwin_store_target_action(i64 %sig, i64 %handler, i64 %flags) {
+entry:
+  switch i64 %sig, label %done [
+    i64 7, label %sig7
+    i64 10, label %sig10
+    i64 12, label %sig12
+  ]
+
+sig7:
+  store i64 %handler, ptr @__mtrt_darwin_handler_sig7, align 8
+  store i64 %flags, ptr @__mtrt_darwin_flags_sig7, align 8
+  br label %done
+
+sig10:
+  store i64 %handler, ptr @__mtrt_darwin_handler_sig10, align 8
+  store i64 %flags, ptr @__mtrt_darwin_flags_sig10, align 8
+  br label %done
+
+sig12:
+  store i64 %handler, ptr @__mtrt_darwin_handler_sig12, align 8
+  store i64 %flags, ptr @__mtrt_darwin_flags_sig12, align 8
+  br label %done
+
+done:
+  ret void
+}
+
+define internal i64 @__mtrt_darwin_sigaction_handler_from_native(i64 %sig, i64 %native_handler, i64 %previous_handler) {
+entry:
+  %dispatcher = call i64 @__mtrt_darwin_sigaction_dispatcher(i64 %sig)
+  %is_dispatcher = icmp eq i64 %native_handler, %dispatcher
+  %handler = select i1 %is_dispatcher, i64 %previous_handler, i64 %native_handler
+  ret i64 %handler
+}
+
 define internal i64 @__mtrt_darwin_timeval_to_ticks(ptr %tv) {
 entry:
   %sec_p = getelementptr i8, ptr %tv, i64 0
@@ -794,7 +1174,15 @@ store_monotonic:
 
 define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
 entry:
-  %r = call i64 @__mtrt_darwin_syscall2(i64 37, i64 %pid, i64 %sig)
+  %native_sig = call i64 @__mtrt_darwin_signal_to_native(i64 %sig)
+  %bad_sig = icmp slt i64 %native_sig, 0
+  br i1 %bad_sig, label %invalid, label %call_kill
+
+invalid:
+  ret i64 %native_sig
+
+call_kill:
+  %r = call i64 @__mtrt_darwin_syscall2(i64 37, i64 %pid, i64 %native_sig)
   ret i64 %r
 }
 
@@ -2508,15 +2896,21 @@ entry:
 define i64 @__mtrt_host_pause() {
 entry:
   %old = alloca i32, align 4
+  %target_old = alloca i64, align 8
   %old_i = ptrtoint ptr %old to i64
   %get_mask = call i64 @__mtrt_darwin_syscall3(i64 48, i64 1, i64 0, i64 %old_i)
   %mask_bad = icmp slt i64 %get_mask, 0
-  br i1 %mask_bad, label %done, label %suspend
+  br i1 %mask_bad, label %done, label %translate
 
-suspend:
+translate:
   %mask = load i32, ptr %old, align 4
   %mask64 = zext i32 %mask to i64
-  %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %mask64)
+  %target_mask = call i64 @__mtrt_darwin_sigset_from_native(i64 %mask64)
+  store i64 %target_mask, ptr %target_old, align 8
+  %native_mask = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_mask)
+  %native_mask32 = trunc i64 %native_mask to i32
+  %native_mask64 = zext i32 %native_mask32 to i64
+  %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %native_mask64)
   ret i64 %r
 
 done:
@@ -2536,9 +2930,109 @@ entry:
 
 define i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
 entry:
-  %act_i = ptrtoint ptr %act to i64
-  %oldact_i = ptrtoint ptr %oldact to i64
-  %r = call i64 @__mtrt_darwin_syscall3(i64 46, i64 %sig, i64 %act_i, i64 %oldact_i)
+  %native_act = alloca [16 x i8], align 8
+  %native_oldact = alloca [16 x i8], align 8
+  %native_sig = call i64 @__mtrt_darwin_signal_to_native(i64 %sig)
+  %bad_sig = icmp slt i64 %native_sig, 0
+  br i1 %bad_sig, label %invalid, label %check_act
+
+check_act:
+  %current_handler = call i64 @__mtrt_darwin_load_target_handler(i64 %sig)
+  %current_flags = call i64 @__mtrt_darwin_load_target_flags(i64 %sig)
+  %act_is_null = icmp eq ptr %act, null
+  br i1 %act_is_null, label %prep_oldact, label %copy_act
+
+copy_act:
+  %target_handler_i = load i64, ptr %act, align 8
+  %dispatcher_i = call i64 @__mtrt_darwin_sigaction_dispatcher(i64 %sig)
+  %is_remapped = icmp ne i64 %dispatcher_i, 0
+  %is_dfl = icmp eq i64 %target_handler_i, 0
+  %is_ign = icmp eq i64 %target_handler_i, 1
+  %is_special = or i1 %is_dfl, %is_ign
+  %use_dispatcher = and i1 %is_remapped, %is_special
+  %use_target_dispatcher = xor i1 %use_dispatcher, %is_remapped
+  %native_handler_i = select i1 %use_target_dispatcher, i64 %dispatcher_i, i64 %target_handler_i
+  store i64 %native_handler_i, ptr %native_act, align 8
+  %target_mask_p = getelementptr i8, ptr %act, i64 16
+  %target_mask = load i64, ptr %target_mask_p, align 8
+  %native_mask = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_mask)
+  %bad_mask = icmp slt i64 %native_mask, 0
+  br i1 %bad_mask, label %invalid, label %copy_flags
+
+copy_flags:
+  %native_mask32 = trunc i64 %native_mask to i32
+  %native_mask_p = getelementptr i8, ptr %native_act, i64 8
+  store i32 %native_mask32, ptr %native_mask_p, align 4
+  %target_flags_p = getelementptr i8, ptr %act, i64 8
+  %target_flags = load i64, ptr %target_flags_p, align 8
+  %native_flags = call i64 @__mtrt_darwin_sigaction_flags_to_native(i64 %target_flags)
+  %bad_flags = icmp slt i64 %native_flags, 0
+  br i1 %bad_flags, label %invalid, label %store_flags
+
+store_flags:
+  %native_flags32 = trunc i64 %native_flags to i32
+  %native_flags_p = getelementptr i8, ptr %native_act, i64 12
+  store i32 %native_flags32, ptr %native_flags_p, align 4
+  br i1 %is_remapped, label %store_target_action, label %act_ready
+
+store_target_action:
+  call void @__mtrt_darwin_store_target_action(i64 %sig, i64 %target_handler_i, i64 %target_flags)
+  br label %act_ready
+
+act_ready:
+  %native_act_i = ptrtoint ptr %native_act to i64
+  br label %prep_oldact
+
+prep_oldact:
+  %previous_handler_phi = phi i64 [ %current_handler, %check_act ], [ %current_handler, %act_ready ]
+  %previous_flags_phi = phi i64 [ %current_flags, %check_act ], [ %current_flags, %act_ready ]
+  %stored_remapped_phi = phi i1 [ false, %check_act ], [ %is_remapped, %act_ready ]
+  %act_i = phi i64 [ 0, %check_act ], [ %native_act_i, %act_ready ]
+  %oldact_is_null = icmp eq ptr %oldact, null
+  br i1 %oldact_is_null, label %do_call, label %set_oldact
+
+set_oldact:
+  %native_oldact_i = ptrtoint ptr %native_oldact to i64
+  br label %do_call
+
+do_call:
+  %oldact_i = phi i64 [ 0, %prep_oldact ], [ %native_oldact_i, %set_oldact ]
+  %r = call i64 @__mtrt_darwin_syscall3(i64 46, i64 %native_sig, i64 %act_i, i64 %oldact_i)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %restore_on_error, label %maybe_store_oldact
+
+restore_on_error:
+  br i1 %stored_remapped_phi, label %restore_previous_action, label %done
+
+restore_previous_action:
+  call void @__mtrt_darwin_store_target_action(i64 %sig, i64 %previous_handler_phi, i64 %previous_flags_phi)
+  br label %done
+
+maybe_store_oldact:
+  br i1 %oldact_is_null, label %done, label %store_oldact
+
+store_oldact:
+  %old_handler = load i64, ptr %native_oldact, align 8
+  %old_target_handler = call i64 @__mtrt_darwin_sigaction_handler_from_native(i64 %sig, i64 %old_handler, i64 %previous_handler_phi)
+  store i64 %old_target_handler, ptr %oldact, align 8
+  %old_native_flags_p = getelementptr i8, ptr %native_oldact, i64 12
+  %old_native_flags32 = load i32, ptr %old_native_flags_p, align 4
+  %old_native_flags = zext i32 %old_native_flags32 to i64
+  %old_target_flags = call i64 @__mtrt_darwin_sigaction_flags_from_native(i64 %old_native_flags)
+  %old_target_flags_p = getelementptr i8, ptr %oldact, i64 8
+  store i64 %old_target_flags, ptr %old_target_flags_p, align 8
+  %old_native_mask_p = getelementptr i8, ptr %native_oldact, i64 8
+  %old_native_mask32 = load i32, ptr %old_native_mask_p, align 4
+  %old_native_mask = zext i32 %old_native_mask32 to i64
+  %old_target_mask = call i64 @__mtrt_darwin_sigset_from_native(i64 %old_native_mask)
+  %old_target_mask_p = getelementptr i8, ptr %oldact, i64 16
+  store i64 %old_target_mask, ptr %old_target_mask_p, align 8
+  ret i64 %r
+
+invalid:
+  ret i64 -22
+
+done:
   ret i64 %r
 }
 
@@ -2567,7 +3061,8 @@ call_sigpending:
 
 store_sigset:
   %darwin_value = load i32, ptr %darwin_sigset, align 4
-  %target_value = zext i32 %darwin_value to i64
+  %darwin_value64 = zext i32 %darwin_value to i64
+  %target_value = call i64 @__mtrt_darwin_sigset_from_native(i64 %darwin_value64)
   store i64 %target_value, ptr %sigset, align 8
   ret i64 %r
 
@@ -2592,13 +3087,18 @@ call_sigprocmask:
 
 copy_set:
   %target_set = load i64, ptr %set, align 8
-  %native_set = trunc i64 %target_set to i32
+  %native_set64 = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_set)
+  %bad_set = icmp slt i64 %native_set64, 0
+  br i1 %bad_set, label %invalid, label %store_set
+
+store_set:
+  %native_set = trunc i64 %native_set64 to i32
   store i32 %native_set, ptr %darwin_set, align 4
   %darwin_set_i = ptrtoint ptr %darwin_set to i64
   br label %prep_oldset
 
 prep_oldset:
-  %set_i = phi i64 [ 0, %call_sigprocmask ], [ %darwin_set_i, %copy_set ]
+  %set_i = phi i64 [ 0, %call_sigprocmask ], [ %darwin_set_i, %store_set ]
   %oldset_is_null = icmp eq ptr %oldset, null
   br i1 %oldset_is_null, label %do_call, label %copy_oldset
 
@@ -2618,7 +3118,8 @@ maybe_store_oldset:
 
 store_oldset:
   %darwin_old = load i32, ptr %darwin_oldset, align 4
-  %target_old = zext i32 %darwin_old to i64
+  %darwin_old64 = zext i32 %darwin_old to i64
+  %target_old = call i64 @__mtrt_darwin_sigset_from_native(i64 %darwin_old64)
   store i64 %target_old, ptr %oldset, align 8
   ret i64 %r
 
@@ -2629,14 +3130,27 @@ done:
 define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
 entry:
   %is_null = icmp eq ptr %sigmask, null
-  br i1 %is_null, label %fault, label %load_mask
+  br i1 %is_null, label %fault, label %check_ptr
 
 fault:
   ret i64 -14
 
+check_ptr:
+  %sigmask_addr = ptrtoint ptr %sigmask to i64
+  %bad_ptr = icmp ult i64 %sigmask_addr, 4096
+  br i1 %bad_ptr, label %fault, label %load_mask
+
 load_mask:
   %target_mask = load i64, ptr %sigmask, align 8
-  %darwin_mask32 = trunc i64 %target_mask to i32
+  %native_mask = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_mask)
+  %bad_mask = icmp slt i64 %native_mask, 0
+  br i1 %bad_mask, label %invalid, label %call_sigsuspend
+
+invalid:
+  ret i64 -22
+
+call_sigsuspend:
+  %darwin_mask32 = trunc i64 %native_mask to i32
   %darwin_mask = zext i32 %darwin_mask32 to i64
   %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %darwin_mask)
   ret i64 %r

@@ -10,7 +10,15 @@ target triple = "x86_64-unknown-linux-gnu"
 @__mtrt_platform_uname_sys_len = constant i64 6, align 8
 @__mtrt_platform_uname_all = constant [27 x i8] c"Linux muffintop 0 0 x86_64\0A", align 1
 @__mtrt_platform_uname_all_len = constant i64 27, align 8
-@__mtrt_poc_sigcont = constant i32 18, align 4
+@__mtrt_poc_sigcont = constant i32 19, align 4
+@__mtrt_linux_handler_sig17 = internal global i64 0, align 8
+@__mtrt_linux_handler_sig18 = internal global i64 0, align 8
+@__mtrt_linux_handler_sig19 = internal global i64 0, align 8
+@__mtrt_linux_handler_sig20 = internal global i64 0, align 8
+@__mtrt_linux_flags_sig17 = internal global i64 0, align 8
+@__mtrt_linux_flags_sig18 = internal global i64 0, align 8
+@__mtrt_linux_flags_sig19 = internal global i64 0, align 8
+@__mtrt_linux_flags_sig20 = internal global i64 0, align 8
 
 define internal i64 @__mtrt_linux_syscall0(i64 %nr) {
 entry:
@@ -1335,23 +1343,417 @@ invalid_clockid:
 
 define internal i64 @__mtrt_linux_signal_to_native(i64 %sig) {
 entry:
-  switch i64 %sig, label %same [
+  switch i64 %sig, label %invalid [
+    i64 0, label %same
+    i64 1, label %same
+    i64 2, label %same
+    i64 3, label %same
+    i64 4, label %same
+    i64 5, label %same
+    i64 6, label %same
+    i64 7, label %same
+    i64 8, label %same
+    i64 9, label %same
+    i64 10, label %same
+    i64 11, label %same
+    i64 12, label %same
+    i64 13, label %same
+    i64 14, label %same
+    i64 15, label %same
     i64 17, label %sigstop
+    i64 18, label %sigtstp
     i64 19, label %sigcont
+    i64 20, label %sigchld
+    i64 21, label %same
+    i64 22, label %same
   ]
 
 sigstop:
   ret i64 19
 
+sigtstp:
+  ret i64 20
+
 sigcont:
+  ret i64 18
+
+sigchld:
+  ret i64 17
+
+same:
+  ret i64 %sig
+
+invalid:
+  ret i64 -22
+}
+
+define internal i64 @__mtrt_linux_signal_from_native(i64 %sig) {
+entry:
+  switch i64 %sig, label %same [
+    i64 17, label %sigchld
+    i64 18, label %sigcont
+    i64 19, label %sigstop
+    i64 20, label %sigtstp
+  ]
+
+sigchld:
+  ret i64 20
+
+sigcont:
+  ret i64 19
+
+sigstop:
+  ret i64 17
+
+sigtstp:
   ret i64 18
 
 same:
   ret i64 %sig
 }
 
+define internal i64 @__mtrt_linux_sigset_to_native(i64 %target) {
+entry:
+  %known = and i64 %target, 4161535
+  %unknown = xor i64 %target, %known
+  %ok = icmp eq i64 %unknown, 0
+  br i1 %ok, label %map, label %invalid
+
+invalid:
+  ret i64 -22
+
+map:
+  %base = and i64 %target, 32767
+  %target_stop = and i64 %target, 65536
+  %has_stop = icmp ne i64 %target_stop, 0
+  %with_stop = select i1 %has_stop, i64 262144, i64 0
+  %target_tstp = and i64 %target, 131072
+  %has_tstp = icmp ne i64 %target_tstp, 0
+  %with_tstp = select i1 %has_tstp, i64 524288, i64 0
+  %target_cont = and i64 %target, 262144
+  %has_cont = icmp ne i64 %target_cont, 0
+  %with_cont = select i1 %has_cont, i64 131072, i64 0
+  %target_chld = and i64 %target, 524288
+  %has_chld = icmp ne i64 %target_chld, 0
+  %with_chld = select i1 %has_chld, i64 65536, i64 0
+  %target_ttin = and i64 %target, 1048576
+  %target_ttou = and i64 %target, 2097152
+  %r0 = or i64 %base, %with_stop
+  %r1 = or i64 %r0, %with_tstp
+  %r2 = or i64 %r1, %with_cont
+  %r3 = or i64 %r2, %with_chld
+  %r4 = or i64 %r3, %target_ttin
+  %r5 = or i64 %r4, %target_ttou
+  ret i64 %r5
+}
+
+define internal i64 @__mtrt_linux_sigset_from_native(i64 %native) {
+entry:
+  %base = and i64 %native, 32767
+  %native_stop = and i64 %native, 262144
+  %has_stop = icmp ne i64 %native_stop, 0
+  %with_stop = select i1 %has_stop, i64 65536, i64 0
+  %native_tstp = and i64 %native, 524288
+  %has_tstp = icmp ne i64 %native_tstp, 0
+  %with_tstp = select i1 %has_tstp, i64 131072, i64 0
+  %native_cont = and i64 %native, 131072
+  %has_cont = icmp ne i64 %native_cont, 0
+  %with_cont = select i1 %has_cont, i64 262144, i64 0
+  %native_chld = and i64 %native, 65536
+  %has_chld = icmp ne i64 %native_chld, 0
+  %with_chld = select i1 %has_chld, i64 524288, i64 0
+  %native_ttin = and i64 %native, 1048576
+  %native_ttou = and i64 %native, 2097152
+  %r0 = or i64 %base, %with_stop
+  %r1 = or i64 %r0, %with_tstp
+  %r2 = or i64 %r1, %with_cont
+  %r3 = or i64 %r2, %with_chld
+  %r4 = or i64 %r3, %native_ttin
+  %r5 = or i64 %r4, %native_ttou
+  ret i64 %r5
+}
+
+define internal i64 @__mtrt_linux_sigaction_flags_to_native_x86_64(i64 %target) {
+entry:
+  %known = and i64 %target, 127
+  %unknown = xor i64 %target, %known
+  %ok = icmp eq i64 %unknown, 0
+  br i1 %ok, label %map, label %invalid
+
+invalid:
+  ret i64 -22
+
+map:
+  %low = and i64 %target, 7
+  %restart_bit = and i64 %target, 8
+  %has_restart = icmp ne i64 %restart_bit, 0
+  %restart = select i1 %has_restart, i64 268435456, i64 0
+  %onstack_bit = and i64 %target, 16
+  %has_onstack = icmp ne i64 %onstack_bit, 0
+  %onstack = select i1 %has_onstack, i64 134217728, i64 0
+  %reset_bit = and i64 %target, 32
+  %has_reset = icmp ne i64 %reset_bit, 0
+  %reset = select i1 %has_reset, i64 2147483648, i64 0
+  %nodefer_bit = and i64 %target, 64
+  %has_nodefer = icmp ne i64 %nodefer_bit, 0
+  %nodefer = select i1 %has_nodefer, i64 1073741824, i64 0
+  %r0 = or i64 %low, %restart
+  %r1 = or i64 %r0, %onstack
+  %r2 = or i64 %r1, %reset
+  %r3 = or i64 %r2, %nodefer
+  %r4 = or i64 %r3, 67108864
+  ret i64 %r4
+}
+
+define internal i64 @__mtrt_linux_sigaction_flags_from_native_x86_64(i64 %native) {
+entry:
+  %low = and i64 %native, 7
+  %restart_bit = and i64 %native, 268435456
+  %has_restart = icmp ne i64 %restart_bit, 0
+  %restart = select i1 %has_restart, i64 8, i64 0
+  %onstack_bit = and i64 %native, 134217728
+  %has_onstack = icmp ne i64 %onstack_bit, 0
+  %onstack = select i1 %has_onstack, i64 16, i64 0
+  %reset_bit = and i64 %native, 2147483648
+  %has_reset = icmp ne i64 %reset_bit, 0
+  %reset = select i1 %has_reset, i64 32, i64 0
+  %nodefer_bit = and i64 %native, 1073741824
+  %has_nodefer = icmp ne i64 %nodefer_bit, 0
+  %nodefer = select i1 %has_nodefer, i64 64, i64 0
+  %r0 = or i64 %low, %restart
+  %r1 = or i64 %r0, %onstack
+  %r2 = or i64 %r1, %reset
+  %r3 = or i64 %r2, %nodefer
+  ret i64 %r3
+}
+
+define internal void @__mtrt_linux_rt_sigreturn_restorer_x86_64() #0 {
+entry:
+  call void asm sideeffect "mov $$15, %rax\0A syscall", "~{rax},~{rcx},~{r11},~{memory}"()
+  unreachable
+}
+
+define internal void @__mtrt_linux_siginfo_to_target(ptr %target_info, ptr %native_info) {
+entry:
+  %native_signo32 = load i32, ptr %native_info, align 4
+  %native_signo = sext i32 %native_signo32 to i64
+  %target_signo = call i64 @__mtrt_linux_signal_from_native(i64 %native_signo)
+  %target_signo32 = trunc i64 %target_signo to i32
+  store i32 %target_signo32, ptr %target_info, align 4
+  %native_errno_p = getelementptr i8, ptr %native_info, i64 4
+  %target_errno_p = getelementptr i8, ptr %target_info, i64 4
+  %errno = load i32, ptr %native_errno_p, align 4
+  store i32 %errno, ptr %target_errno_p, align 4
+  %native_code_p = getelementptr i8, ptr %native_info, i64 8
+  %target_code_p = getelementptr i8, ptr %target_info, i64 8
+  %code = load i32, ptr %native_code_p, align 4
+  store i32 %code, ptr %target_code_p, align 4
+  %target_pad_p = getelementptr i8, ptr %target_info, i64 12
+  store i32 0, ptr %target_pad_p, align 4
+  ret void
+}
+
+define internal void @__mtrt_linux_dispatch_target_signal(i64 %target_sig, ptr %handler_slot, ptr %flags_slot, ptr %native_info, ptr %ucontext) {
+entry:
+  %handler_i = load i64, ptr %handler_slot, align 8
+  %is_dfl = icmp eq i64 %handler_i, 0
+  %is_ign = icmp eq i64 %handler_i, 1
+  %is_special = or i1 %is_dfl, %is_ign
+  br i1 %is_special, label %done, label %check_siginfo
+
+check_siginfo:
+  %flags = load i64, ptr %flags_slot, align 8
+  %siginfo_bit = and i64 %flags, 4
+  %has_siginfo = icmp ne i64 %siginfo_bit, 0
+  br i1 %has_siginfo, label %call_siginfo, label %call_simple
+
+call_simple:
+  %handler = inttoptr i64 %handler_i to ptr
+  %target_sig32 = trunc i64 %target_sig to i32
+  call void %handler(i32 %target_sig32)
+  br label %done
+
+call_siginfo:
+  %target_info = alloca [16 x i8], align 4
+  %native_info_null = icmp eq ptr %native_info, null
+  br i1 %native_info_null, label %call_siginfo_handler, label %copy_siginfo
+
+copy_siginfo:
+  call void @__mtrt_linux_siginfo_to_target(ptr %target_info, ptr %native_info)
+  br label %call_siginfo_handler
+
+call_siginfo_handler:
+  %info_arg = phi ptr [ null, %call_siginfo ], [ %target_info, %copy_siginfo ]
+  %handler3 = inttoptr i64 %handler_i to ptr
+  %target_sig32_info = trunc i64 %target_sig to i32
+  call void %handler3(i32 %target_sig32_info, ptr %info_arg, ptr %ucontext)
+  br label %done
+
+done:
+  ret void
+}
+
+define internal void @__mtrt_linux_dispatch_sig17(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_linux_dispatch_target_signal(i64 17, ptr @__mtrt_linux_handler_sig17, ptr @__mtrt_linux_flags_sig17, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal void @__mtrt_linux_dispatch_sig18(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_linux_dispatch_target_signal(i64 18, ptr @__mtrt_linux_handler_sig18, ptr @__mtrt_linux_flags_sig18, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal void @__mtrt_linux_dispatch_sig19(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_linux_dispatch_target_signal(i64 19, ptr @__mtrt_linux_handler_sig19, ptr @__mtrt_linux_flags_sig19, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal void @__mtrt_linux_dispatch_sig20(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+entry:
+  call void @__mtrt_linux_dispatch_target_signal(i64 20, ptr @__mtrt_linux_handler_sig20, ptr @__mtrt_linux_flags_sig20, ptr %native_info, ptr %ucontext)
+  ret void
+}
+
+define internal i64 @__mtrt_linux_sigaction_dispatcher(i64 %sig) {
+entry:
+  switch i64 %sig, label %none [
+    i64 17, label %sig17
+    i64 18, label %sig18
+    i64 19, label %sig19
+    i64 20, label %sig20
+  ]
+
+sig17:
+  %d17 = ptrtoint ptr @__mtrt_linux_dispatch_sig17 to i64
+  ret i64 %d17
+
+sig18:
+  %d18 = ptrtoint ptr @__mtrt_linux_dispatch_sig18 to i64
+  ret i64 %d18
+
+sig19:
+  %d19 = ptrtoint ptr @__mtrt_linux_dispatch_sig19 to i64
+  ret i64 %d19
+
+sig20:
+  %d20 = ptrtoint ptr @__mtrt_linux_dispatch_sig20 to i64
+  ret i64 %d20
+
+none:
+  ret i64 0
+}
+
+define internal i64 @__mtrt_linux_load_target_handler(i64 %sig) {
+entry:
+  switch i64 %sig, label %none [
+    i64 17, label %sig17
+    i64 18, label %sig18
+    i64 19, label %sig19
+    i64 20, label %sig20
+  ]
+
+sig17:
+  %h17 = load i64, ptr @__mtrt_linux_handler_sig17, align 8
+  ret i64 %h17
+
+sig18:
+  %h18 = load i64, ptr @__mtrt_linux_handler_sig18, align 8
+  ret i64 %h18
+
+sig19:
+  %h19 = load i64, ptr @__mtrt_linux_handler_sig19, align 8
+  ret i64 %h19
+
+sig20:
+  %h20 = load i64, ptr @__mtrt_linux_handler_sig20, align 8
+  ret i64 %h20
+
+none:
+  ret i64 0
+}
+
+define internal i64 @__mtrt_linux_load_target_flags(i64 %sig) {
+entry:
+  switch i64 %sig, label %none [
+    i64 17, label %sig17
+    i64 18, label %sig18
+    i64 19, label %sig19
+    i64 20, label %sig20
+  ]
+
+sig17:
+  %f17 = load i64, ptr @__mtrt_linux_flags_sig17, align 8
+  ret i64 %f17
+
+sig18:
+  %f18 = load i64, ptr @__mtrt_linux_flags_sig18, align 8
+  ret i64 %f18
+
+sig19:
+  %f19 = load i64, ptr @__mtrt_linux_flags_sig19, align 8
+  ret i64 %f19
+
+sig20:
+  %f20 = load i64, ptr @__mtrt_linux_flags_sig20, align 8
+  ret i64 %f20
+
+none:
+  ret i64 0
+}
+
+define internal void @__mtrt_linux_store_target_action(i64 %sig, i64 %handler, i64 %flags) {
+entry:
+  switch i64 %sig, label %done [
+    i64 17, label %sig17
+    i64 18, label %sig18
+    i64 19, label %sig19
+    i64 20, label %sig20
+  ]
+
+sig17:
+  store i64 %handler, ptr @__mtrt_linux_handler_sig17, align 8
+  store i64 %flags, ptr @__mtrt_linux_flags_sig17, align 8
+  br label %done
+
+sig18:
+  store i64 %handler, ptr @__mtrt_linux_handler_sig18, align 8
+  store i64 %flags, ptr @__mtrt_linux_flags_sig18, align 8
+  br label %done
+
+sig19:
+  store i64 %handler, ptr @__mtrt_linux_handler_sig19, align 8
+  store i64 %flags, ptr @__mtrt_linux_flags_sig19, align 8
+  br label %done
+
+sig20:
+  store i64 %handler, ptr @__mtrt_linux_handler_sig20, align 8
+  store i64 %flags, ptr @__mtrt_linux_flags_sig20, align 8
+  br label %done
+
+done:
+  ret void
+}
+
+define internal i64 @__mtrt_linux_sigaction_handler_from_native(i64 %sig, i64 %native_handler, i64 %previous_handler) {
+entry:
+  %dispatcher = call i64 @__mtrt_linux_sigaction_dispatcher(i64 %sig)
+  %is_dispatcher = icmp eq i64 %native_handler, %dispatcher
+  %handler = select i1 %is_dispatcher, i64 %previous_handler, i64 %native_handler
+  ret i64 %handler
+}
+
 define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
   %native_sig = call i64 @__mtrt_linux_signal_to_native(i64 %sig)
+  %bad_sig = icmp slt i64 %native_sig, 0
+  br i1 %bad_sig, label %invalid, label %call_kill
+
+invalid:
+  ret i64 %native_sig
+
+call_kill:
   %r = call i64 @__mtrt_linux_syscall2(i64 62, i64 %pid, i64 %native_sig)
   ret i64 %r
 }
@@ -1778,9 +2180,108 @@ define i64 @__mtrt_host_sched_yield() {
 }
 
 define i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
-  %act_i = ptrtoint ptr %act to i64
-  %oldact_i = ptrtoint ptr %oldact to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 13, i64 %sig, i64 %act_i, i64 %oldact_i, i64 8)
+entry:
+  %native_act = alloca [32 x i8], align 8
+  %native_oldact = alloca [32 x i8], align 8
+  %native_sig = call i64 @__mtrt_linux_signal_to_native(i64 %sig)
+  %bad_sig = icmp slt i64 %native_sig, 0
+  br i1 %bad_sig, label %invalid, label %check_act
+
+check_act:
+  %current_handler = call i64 @__mtrt_linux_load_target_handler(i64 %sig)
+  %current_flags = call i64 @__mtrt_linux_load_target_flags(i64 %sig)
+  %act_is_null = icmp eq ptr %act, null
+  br i1 %act_is_null, label %prep_oldact, label %copy_act
+
+copy_act:
+  %target_handler_i = load i64, ptr %act, align 8
+  %dispatcher_i = call i64 @__mtrt_linux_sigaction_dispatcher(i64 %sig)
+  %is_remapped = icmp ne i64 %dispatcher_i, 0
+  %is_dfl = icmp eq i64 %target_handler_i, 0
+  %is_ign = icmp eq i64 %target_handler_i, 1
+  %is_special = or i1 %is_dfl, %is_ign
+  %use_dispatcher = and i1 %is_remapped, %is_special
+  %use_target_dispatcher = xor i1 %use_dispatcher, %is_remapped
+  %native_handler_i = select i1 %use_target_dispatcher, i64 %dispatcher_i, i64 %target_handler_i
+  store i64 %native_handler_i, ptr %native_act, align 8
+  %target_flags_p = getelementptr i8, ptr %act, i64 8
+  %target_flags = load i64, ptr %target_flags_p, align 8
+  %native_flags = call i64 @__mtrt_linux_sigaction_flags_to_native_x86_64(i64 %target_flags)
+  %bad_flags = icmp slt i64 %native_flags, 0
+  br i1 %bad_flags, label %invalid, label %copy_act_mask
+
+copy_act_mask:
+  %native_flags_p = getelementptr i8, ptr %native_act, i64 8
+  store i64 %native_flags, ptr %native_flags_p, align 8
+  %native_restorer_p = getelementptr i8, ptr %native_act, i64 16
+  store ptr @__mtrt_linux_rt_sigreturn_restorer_x86_64, ptr %native_restorer_p, align 8
+  %target_mask_p = getelementptr i8, ptr %act, i64 16
+  %target_mask = load i64, ptr %target_mask_p, align 8
+  %native_mask = call i64 @__mtrt_linux_sigset_to_native(i64 %target_mask)
+  %bad_mask = icmp slt i64 %native_mask, 0
+  br i1 %bad_mask, label %invalid, label %store_act_mask
+
+store_act_mask:
+  %native_mask_p = getelementptr i8, ptr %native_act, i64 24
+  store i64 %native_mask, ptr %native_mask_p, align 8
+  br i1 %is_remapped, label %store_target_action, label %act_ready
+
+store_target_action:
+  call void @__mtrt_linux_store_target_action(i64 %sig, i64 %target_handler_i, i64 %target_flags)
+  br label %act_ready
+
+act_ready:
+  %native_act_i = ptrtoint ptr %native_act to i64
+  br label %prep_oldact
+
+prep_oldact:
+  %previous_handler_phi = phi i64 [ %current_handler, %check_act ], [ %current_handler, %act_ready ]
+  %previous_flags_phi = phi i64 [ %current_flags, %check_act ], [ %current_flags, %act_ready ]
+  %stored_remapped_phi = phi i1 [ false, %check_act ], [ %is_remapped, %act_ready ]
+  %act_i = phi i64 [ 0, %check_act ], [ %native_act_i, %act_ready ]
+  %oldact_is_null = icmp eq ptr %oldact, null
+  br i1 %oldact_is_null, label %do_call, label %set_oldact
+
+set_oldact:
+  %native_oldact_i = ptrtoint ptr %native_oldact to i64
+  br label %do_call
+
+do_call:
+  %oldact_i = phi i64 [ 0, %prep_oldact ], [ %native_oldact_i, %set_oldact ]
+  %r = call i64 @__mtrt_linux_syscall4(i64 13, i64 %native_sig, i64 %act_i, i64 %oldact_i, i64 8)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %restore_on_error, label %maybe_store_oldact
+
+restore_on_error:
+  br i1 %stored_remapped_phi, label %restore_previous_action, label %done
+
+restore_previous_action:
+  call void @__mtrt_linux_store_target_action(i64 %sig, i64 %previous_handler_phi, i64 %previous_flags_phi)
+  br label %done
+
+maybe_store_oldact:
+  br i1 %oldact_is_null, label %done, label %store_oldact
+
+store_oldact:
+  %old_handler = load i64, ptr %native_oldact, align 8
+  %old_target_handler = call i64 @__mtrt_linux_sigaction_handler_from_native(i64 %sig, i64 %old_handler, i64 %previous_handler_phi)
+  store i64 %old_target_handler, ptr %oldact, align 8
+  %old_native_flags_p = getelementptr i8, ptr %native_oldact, i64 8
+  %old_native_flags = load i64, ptr %old_native_flags_p, align 8
+  %old_target_flags = call i64 @__mtrt_linux_sigaction_flags_from_native_x86_64(i64 %old_native_flags)
+  %old_target_flags_p = getelementptr i8, ptr %oldact, i64 8
+  store i64 %old_target_flags, ptr %old_target_flags_p, align 8
+  %old_native_mask_p = getelementptr i8, ptr %native_oldact, i64 24
+  %old_native_mask = load i64, ptr %old_native_mask_p, align 8
+  %old_target_mask = call i64 @__mtrt_linux_sigset_from_native(i64 %old_native_mask)
+  %old_target_mask_p = getelementptr i8, ptr %oldact, i64 16
+  store i64 %old_target_mask, ptr %old_target_mask_p, align 8
+  ret i64 %r
+
+invalid:
+  ret i64 -22
+
+done:
   ret i64 %r
 }
 
@@ -1792,29 +2293,157 @@ define i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
 }
 
 define i64 @__mtrt_host_sigpending(ptr %sigset) {
-  %sigset_i = ptrtoint ptr %sigset to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 127, i64 %sigset_i, i64 8)
+entry:
+  %native_sigset = alloca i64, align 8
+  %is_null = icmp eq ptr %sigset, null
+  br i1 %is_null, label %fault, label %call_sigpending
+
+fault:
+  ret i64 -14
+
+call_sigpending:
+  %native_sigset_i = ptrtoint ptr %native_sigset to i64
+  %r = call i64 @__mtrt_linux_syscall2(i64 127, i64 %native_sigset_i, i64 8)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %done, label %store_sigset
+
+store_sigset:
+  %native_value = load i64, ptr %native_sigset, align 8
+  %target_value = call i64 @__mtrt_linux_sigset_from_native(i64 %native_value)
+  store i64 %target_value, ptr %sigset, align 8
+  ret i64 %r
+
+done:
   ret i64 %r
 }
 
 define i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
-  %set_i = ptrtoint ptr %set to i64
-  %oldset_i = ptrtoint ptr %oldset to i64
+entry:
+  %native_set = alloca i64, align 8
+  %native_oldset = alloca i64, align 8
+  %set_is_null = icmp eq ptr %set, null
+  br i1 %set_is_null, label %prep_oldset, label %copy_set
+
+copy_set:
+  %target_set = load i64, ptr %set, align 8
+  %native_set_value = call i64 @__mtrt_linux_sigset_to_native(i64 %target_set)
+  %bad_set = icmp slt i64 %native_set_value, 0
+  br i1 %bad_set, label %invalid, label %store_set
+
+store_set:
+  store i64 %native_set_value, ptr %native_set, align 8
+  %native_set_i = ptrtoint ptr %native_set to i64
+  br label %prep_oldset
+
+prep_oldset:
+  %set_i = phi i64 [ 0, %entry ], [ %native_set_i, %store_set ]
+  %oldset_is_null = icmp eq ptr %oldset, null
+  br i1 %oldset_is_null, label %do_call, label %set_oldset
+
+set_oldset:
+  %native_oldset_i = ptrtoint ptr %native_oldset to i64
+  br label %do_call
+
+do_call:
+  %oldset_i = phi i64 [ 0, %prep_oldset ], [ %native_oldset_i, %set_oldset ]
   %r = call i64 @__mtrt_linux_syscall4(i64 14, i64 %how, i64 %set_i, i64 %oldset_i, i64 8)
+  %bad = icmp slt i64 %r, 0
+  br i1 %bad, label %done, label %maybe_store_oldset
+
+maybe_store_oldset:
+  br i1 %oldset_is_null, label %done, label %store_oldset
+
+store_oldset:
+  %native_old = load i64, ptr %native_oldset, align 8
+  %target_old = call i64 @__mtrt_linux_sigset_from_native(i64 %native_old)
+  store i64 %target_old, ptr %oldset, align 8
+  ret i64 %r
+
+invalid:
+  ret i64 -22
+
+done:
   ret i64 %r
 }
 
 define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
-  %sigmask_i = ptrtoint ptr %sigmask to i64
+entry:
+  %native_sigmask = alloca i64, align 8
+  %is_null = icmp eq ptr %sigmask, null
+  br i1 %is_null, label %fault, label %check_ptr
+
+fault:
+  ret i64 -14
+
+check_ptr:
+  %sigmask_addr = ptrtoint ptr %sigmask to i64
+  %bad_ptr = icmp ult i64 %sigmask_addr, 4096
+  br i1 %bad_ptr, label %fault, label %copy_mask
+
+copy_mask:
+  %target_mask = load i64, ptr %sigmask, align 8
+  %native_mask = call i64 @__mtrt_linux_sigset_to_native(i64 %target_mask)
+  %bad_mask = icmp slt i64 %native_mask, 0
+  br i1 %bad_mask, label %invalid, label %call_sigsuspend
+
+invalid:
+  ret i64 -22
+
+call_sigsuspend:
+  store i64 %native_mask, ptr %native_sigmask, align 8
+  %sigmask_i = ptrtoint ptr %native_sigmask to i64
   %r = call i64 @__mtrt_linux_syscall2(i64 130, i64 %sigmask_i, i64 8)
   ret i64 %r
 }
 
 define i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
-  %set_i = ptrtoint ptr %set to i64
-  %info_i = ptrtoint ptr %info to i64
+entry:
+  %native_set = alloca i64, align 8
+  %native_info = alloca [128 x i8], align 8
+  %set_is_null = icmp eq ptr %set, null
+  br i1 %set_is_null, label %fault, label %copy_set
+
+fault:
+  ret i64 -14
+
+copy_set:
+  %target_set = load i64, ptr %set, align 8
+  %native_set_value = call i64 @__mtrt_linux_sigset_to_native(i64 %target_set)
+  %bad_set = icmp slt i64 %native_set_value, 0
+  br i1 %bad_set, label %invalid, label %prep_info
+
+invalid:
+  ret i64 -22
+
+prep_info:
+  store i64 %native_set_value, ptr %native_set, align 8
+  %set_i = ptrtoint ptr %native_set to i64
+  %info_is_null = icmp eq ptr %info, null
+  br i1 %info_is_null, label %do_call, label %set_info
+
+set_info:
+  %native_info_i = ptrtoint ptr %native_info to i64
+  br label %do_call
+
+do_call:
+  %info_i = phi i64 [ 0, %prep_info ], [ %native_info_i, %set_info ]
   %timeout_i = ptrtoint ptr %timeout to i64
   %r = call i64 @__mtrt_linux_syscall4(i64 128, i64 %set_i, i64 %info_i, i64 %timeout_i, i64 8)
+  %delivered = icmp sgt i64 %r, 0
+  br i1 %delivered, label %maybe_copy_info, label %done
+
+maybe_copy_info:
+  br i1 %info_is_null, label %return_signal, label %copy_info
+
+copy_info:
+  call void @__mtrt_linux_siginfo_to_target(ptr %info, ptr %native_info)
+  br label %return_signal
+
+return_signal:
+  %target_sig = call i64 @__mtrt_linux_signal_from_native(i64 %r)
+  ret i64 %target_sig
+
+done:
   ret i64 %r
 }
 
@@ -1835,3 +2464,5 @@ define i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
   %r = call i64 @__mtrt_linux_syscall2(i64 235, i64 %path_i, i64 %times_i)
   ret i64 %r
 }
+
+attributes #0 = { naked noreturn }
