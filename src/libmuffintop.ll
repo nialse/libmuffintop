@@ -192,6 +192,46 @@ done:
   ret void
 }
 
+define i64 @__mtrt_strlen(ptr %s) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %cont ]
+  %p = getelementptr i8, ptr %s, i64 %i
+  %c = load i8, ptr %p, align 1
+  %is_zero = icmp eq i8 %c, 0
+  br i1 %is_zero, label %done, label %cont
+
+cont:
+  %next = add i64 %i, 1
+  br label %loop
+
+done:
+  ret i64 %i
+}
+
+define void @__mtrt_copy_cstr(ptr %dst, ptr %src, i64 %len) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %copy ]
+  %done = icmp ugt i64 %i, %len
+  br i1 %done, label %ret, label %copy
+
+copy:
+  %sp = getelementptr i8, ptr %src, i64 %i
+  %dp = getelementptr i8, ptr %dst, i64 %i
+  %c = load i8, ptr %sp, align 1
+  store i8 %c, ptr %dp, align 1
+  %next = add i64 %i, 1
+  br label %loop
+
+ret:
+  ret void
+}
+
 define internal i1 @__mtrt_open_flags_supported(i32 %flags) {
 entry:
   %known = and i32 %flags, 1731

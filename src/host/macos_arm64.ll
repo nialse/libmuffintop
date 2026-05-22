@@ -15,6 +15,8 @@ target triple = "arm64-apple-macosx13.0.0"
 @__mtrt_darwin_flags_sig12 = internal global i64 0, align 8
 
 declare i8 @__mtrt_common_dtype(i8)
+declare i64 @__mtrt_strlen(ptr)
+declare void @__mtrt_copy_cstr(ptr, ptr, i64)
 declare void @__mtrt_store_dent64(ptr, i64, i64, i8, ptr, i64)
 
 define internal i64 @__mtrt_darwin_syscall0(i64 %nr) {
@@ -102,46 +104,6 @@ define internal i64 @__mtrt_darwin_fork() {
 entry:
   %r = call i64 asm sideeffect "mov x16, #2\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A b 2f\0A1:\0A cbz x1, 2f\0A mov x0, #0\0A2:", "={x0},~{x1},~{x16},~{memory},~{cc}"()
   ret i64 %r
-}
-
-define internal i64 @__mtrt_strlen(ptr %s) {
-entry:
-  br label %loop
-
-loop:
-  %i = phi i64 [ 0, %entry ], [ %next, %cont ]
-  %p = getelementptr i8, ptr %s, i64 %i
-  %c = load i8, ptr %p, align 1
-  %is_zero = icmp eq i8 %c, 0
-  br i1 %is_zero, label %done, label %cont
-
-cont:
-  %next = add i64 %i, 1
-  br label %loop
-
-done:
-  ret i64 %i
-}
-
-define internal void @__mtrt_copy_cstr(ptr %dst, ptr %src, i64 %len) {
-entry:
-  br label %loop
-
-loop:
-  %i = phi i64 [ 0, %entry ], [ %next, %copy ]
-  %done = icmp ugt i64 %i, %len
-  br i1 %done, label %ret, label %copy
-
-copy:
-  %sp = getelementptr i8, ptr %src, i64 %i
-  %dp = getelementptr i8, ptr %dst, i64 %i
-  %c = load i8, ptr %sp, align 1
-  store i8 %c, ptr %dp, align 1
-  %next = add i64 %i, 1
-  br label %loop
-
-ret:
-  ret void
 }
 
 define internal i64 @__mtrt_darwin_translate_getdirentries64(ptr %buf, i64 %native_bytes) {
