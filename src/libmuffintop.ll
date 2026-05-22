@@ -2,10 +2,10 @@
 ; Public names are POSIX-derived, but the target ABI is not the C POSIX ABI.
 ; Target-aligned primitives return negative POSIX errno values directly.
 
-target triple = "x86_64-unknown-linux-gnu"
-
 %struct.timespec = type { i64, i64 }
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
+
+@__mtrt_poc_sigcont = constant i32 19, align 4
 
 declare i64 @__mtrt_host_getpid()
 declare i64 @__mtrt_host_getppid()
@@ -103,6 +103,94 @@ declare i64 @__mtrt_host_sigtimedwait(ptr, ptr, ptr)
 declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
 declare i64 @__mtrt_host_times(ptr)
 declare i64 @__mtrt_host_utimes(ptr, ptr)
+
+define i8 @__mtrt_common_dtype(i8 %dtype) {
+entry:
+  switch i8 %dtype, label %unknown [
+    i8 1, label %known
+    i8 2, label %known
+    i8 4, label %known
+    i8 6, label %known
+    i8 8, label %known
+    i8 10, label %known
+    i8 12, label %known
+  ]
+
+known:
+  ret i8 %dtype
+
+unknown:
+  ret i8 0
+}
+
+define i64 @__mtrt_name_len_bounded(ptr %name, i64 %limit) {
+entry:
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %cont ]
+  %at_limit = icmp uge i64 %i, %limit
+  br i1 %at_limit, label %done, label %check
+
+check:
+  %p = getelementptr i8, ptr %name, i64 %i
+  %c = load i8, ptr %p, align 1
+  %is_zero = icmp eq i8 %c, 0
+  br i1 %is_zero, label %done, label %cont
+
+cont:
+  %next = add i64 %i, 1
+  br label %loop
+
+done:
+  ret i64 %i
+}
+
+define void @__mtrt_store_dent64(ptr %dst, i64 %ino, i64 %reclen, i8 %dtype, ptr %name, i64 %name_len) {
+entry:
+  store i64 %ino, ptr %dst, align 8
+  %reclen_p = getelementptr i8, ptr %dst, i64 8
+  %reclen32 = trunc i64 %reclen to i32
+  store i32 %reclen32, ptr %reclen_p, align 4
+  %dtype_p = getelementptr i8, ptr %dst, i64 12
+  store i8 %dtype, ptr %dtype_p, align 1
+  %pad0_p = getelementptr i8, ptr %dst, i64 13
+  store i8 0, ptr %pad0_p, align 1
+  %pad1_p = getelementptr i8, ptr %dst, i64 14
+  store i8 0, ptr %pad1_p, align 1
+  %pad2_p = getelementptr i8, ptr %dst, i64 15
+  store i8 0, ptr %pad2_p, align 1
+  %first_pad = add i64 %name_len, 17
+  br label %copy_loop
+
+copy_loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %copy ]
+  %copy_done = icmp ugt i64 %i, %name_len
+  br i1 %copy_done, label %pad_loop, label %copy
+
+copy:
+  %src_p = getelementptr i8, ptr %name, i64 %i
+  %dst_name_base = getelementptr i8, ptr %dst, i64 16
+  %dst_p = getelementptr i8, ptr %dst_name_base, i64 %i
+  %c = load i8, ptr %src_p, align 1
+  store i8 %c, ptr %dst_p, align 1
+  %next = add i64 %i, 1
+  br label %copy_loop
+
+pad_loop:
+  %pad_i = phi i64 [ %first_pad, %copy_loop ], [ %pad_next, %pad ]
+  %pad_done = icmp uge i64 %pad_i, %reclen
+  br i1 %pad_done, label %done, label %pad
+
+pad:
+  %pad_p = getelementptr i8, ptr %dst, i64 %pad_i
+  store i8 0, ptr %pad_p, align 1
+  %pad_next = add i64 %pad_i, 1
+  br label %pad_loop
+
+done:
+  ret void
+}
 
 define internal i1 @__mtrt_open_flags_supported(i32 %flags) {
 entry:
