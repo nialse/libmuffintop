@@ -65,6 +65,54 @@ entry:
   ret i64 %ret
 }
 
+define internal i64 @__mtrt_linux_copy_from_target(ptr %dst, ptr %src, i64 %len) {
+entry:
+  %local = alloca [16 x i8], align 8
+  %remote = alloca [16 x i8], align 8
+  store ptr %dst, ptr %local, align 8
+  %local_len_p = getelementptr i8, ptr %local, i64 8
+  store i64 %len, ptr %local_len_p, align 8
+  store ptr %src, ptr %remote, align 8
+  %remote_len_p = getelementptr i8, ptr %remote, i64 8
+  store i64 %len, ptr %remote_len_p, align 8
+  %pid = call i64 @__mtrt_linux_syscall0(i64 172)
+  %local_i = ptrtoint ptr %local to i64
+  %remote_i = ptrtoint ptr %remote to i64
+  %r = call i64 @__mtrt_linux_syscall6(i64 270, i64 %pid, i64 %local_i, i64 1, i64 %remote_i, i64 1, i64 0)
+  %ok = icmp eq i64 %r, %len
+  br i1 %ok, label %done, label %fault
+
+done:
+  ret i64 0
+
+fault:
+  ret i64 -14
+}
+
+define internal i64 @__mtrt_linux_copy_to_target(ptr %dst, ptr %src, i64 %len) {
+entry:
+  %local = alloca [16 x i8], align 8
+  %remote = alloca [16 x i8], align 8
+  store ptr %src, ptr %local, align 8
+  %local_len_p = getelementptr i8, ptr %local, i64 8
+  store i64 %len, ptr %local_len_p, align 8
+  store ptr %dst, ptr %remote, align 8
+  %remote_len_p = getelementptr i8, ptr %remote, i64 8
+  store i64 %len, ptr %remote_len_p, align 8
+  %pid = call i64 @__mtrt_linux_syscall0(i64 172)
+  %local_i = ptrtoint ptr %local to i64
+  %remote_i = ptrtoint ptr %remote to i64
+  %r = call i64 @__mtrt_linux_syscall6(i64 271, i64 %pid, i64 %local_i, i64 1, i64 %remote_i, i64 1, i64 0)
+  %ok = icmp eq i64 %r, %len
+  br i1 %ok, label %done, label %fault
+
+done:
+  ret i64 0
+
+fault:
+  ret i64 -14
+}
+
 declare i64 @__mtrt_linux_makedev(i32 %major32, i32 %minor32)
 
 
@@ -91,8 +139,10 @@ call_statx:
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_linux_store_statx(ptr %buf, ptr %sx)
-  ret i64 0
+  %target_stat = alloca [120 x i8], align 8
+  call void @__mtrt_linux_store_statx(ptr %target_stat, ptr %sx)
+  %copy = call i64 @__mtrt_linux_copy_to_target(ptr %buf, ptr %target_stat, i64 120)
+  ret i64 %copy
 
 done:
   ret i64 %r
@@ -854,8 +904,10 @@ call_get:
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_linux_store_target_termios(ptr %termios, ptr %native)
-  ret i64 0
+  %target_termios = alloca [72 x i8], align 8
+  call void @__mtrt_linux_store_target_termios(ptr %target_termios, ptr %native)
+  %copy = call i64 @__mtrt_linux_copy_to_target(ptr %termios, ptr %target_termios, i64 72)
+  ret i64 %copy
 
 done:
   ret i64 %r
@@ -897,13 +949,19 @@ fault:
 map_action:
   %request = call i64 @__mtrt_linux_tcsetattr_request(i64 %action)
   %bad_action = icmp eq i64 %request, -1
-  br i1 %bad_action, label %invalid, label %validate
+  br i1 %bad_action, label %invalid, label %copy_termios
 
 invalid:
   ret i64 -22
 
+copy_termios:
+  %target_termios = alloca [72 x i8], align 8
+  %copy = call i64 @__mtrt_linux_copy_from_target(ptr %target_termios, ptr %termios, i64 72)
+  %copy_ok = icmp eq i64 %copy, 0
+  br i1 %copy_ok, label %validate, label %fault
+
 validate:
-  %valid = call i1 @__mtrt_linux_termios_target_valid(ptr %termios)
+  %valid = call i1 @__mtrt_linux_termios_target_valid(ptr %target_termios)
   br i1 %valid, label %read_native, label %invalid
 
 read_native:
@@ -913,7 +971,7 @@ read_native:
   br i1 %get_ok, label %overlay, label %done
 
 overlay:
-  call void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %termios)
+  call void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %target_termios)
   %set = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 %request, ptr %native)
   ret i64 %set
 
@@ -1283,7 +1341,13 @@ check_act:
   br i1 %act_is_null, label %prep_oldact, label %copy_act
 
 copy_act:
-  %target_handler_i = load i64, ptr %act, align 8
+  %target_act = alloca [24 x i8], align 8
+  %copy_act_in = call i64 @__mtrt_linux_copy_from_target(ptr %target_act, ptr %act, i64 24)
+  %copy_act_ok = icmp eq i64 %copy_act_in, 0
+  br i1 %copy_act_ok, label %load_act, label %fault
+
+load_act:
+  %target_handler_i = load i64, ptr %target_act, align 8
   %dispatcher_i = call i64 @__mtrt_linux_sigaction_dispatcher(i64 %sig)
   %is_remapped = icmp ne i64 %dispatcher_i, 0
   %is_dfl = icmp eq i64 %target_handler_i, 0
@@ -1293,7 +1357,7 @@ copy_act:
   %use_target_dispatcher = xor i1 %use_dispatcher, %is_remapped
   %native_handler_i = select i1 %use_target_dispatcher, i64 %dispatcher_i, i64 %target_handler_i
   store i64 %native_handler_i, ptr %native_act, align 8
-  %target_flags_p = getelementptr i8, ptr %act, i64 8
+  %target_flags_p = getelementptr i8, ptr %target_act, i64 8
   %target_flags = load i64, ptr %target_flags_p, align 8
   %native_flags = call i64 @__mtrt_linux_sigaction_flags_to_native(i64 %target_flags)
   %bad_flags = icmp slt i64 %native_flags, 0
@@ -1304,7 +1368,7 @@ copy_act_mask:
   store i64 %native_flags, ptr %native_flags_p, align 8
   %native_restorer_p = getelementptr i8, ptr %native_act, i64 16
   store i64 0, ptr %native_restorer_p, align 8
-  %target_mask_p = getelementptr i8, ptr %act, i64 16
+  %target_mask_p = getelementptr i8, ptr %target_act, i64 16
   %target_mask = load i64, ptr %target_mask_p, align 8
   %native_mask = call i64 @__mtrt_linux_sigset_to_native(i64 %target_mask)
   %bad_mask = icmp slt i64 %native_mask, 0
@@ -1352,23 +1416,41 @@ maybe_store_oldact:
   br i1 %oldact_is_null, label %done, label %store_oldact
 
 store_oldact:
+  %target_oldact_out = alloca [24 x i8], align 8
   %old_handler = load i64, ptr %native_oldact, align 8
   %old_target_handler = call i64 @__mtrt_linux_sigaction_handler_from_native(i64 %sig, i64 %old_handler, i64 %previous_handler_phi)
-  store i64 %old_target_handler, ptr %oldact, align 8
+  store i64 %old_target_handler, ptr %target_oldact_out, align 8
   %old_native_flags_p = getelementptr i8, ptr %native_oldact, i64 8
   %old_native_flags = load i64, ptr %old_native_flags_p, align 8
   %old_target_flags = call i64 @__mtrt_linux_sigaction_flags_from_native(i64 %old_native_flags)
-  %old_target_flags_p = getelementptr i8, ptr %oldact, i64 8
+  %old_target_flags_p = getelementptr i8, ptr %target_oldact_out, i64 8
   store i64 %old_target_flags, ptr %old_target_flags_p, align 8
   %old_native_mask_p = getelementptr i8, ptr %native_oldact, i64 24
   %old_native_mask = load i64, ptr %old_native_mask_p, align 8
   %old_target_mask = call i64 @__mtrt_linux_sigset_from_native(i64 %old_native_mask)
-  %old_target_mask_p = getelementptr i8, ptr %oldact, i64 16
+  %old_target_mask_p = getelementptr i8, ptr %target_oldact_out, i64 16
   store i64 %old_target_mask, ptr %old_target_mask_p, align 8
+  %copy_oldact = call i64 @__mtrt_linux_copy_to_target(ptr %oldact, ptr %target_oldact_out, i64 24)
+  %copy_oldact_ok = icmp eq i64 %copy_oldact, 0
+  br i1 %copy_oldact_ok, label %oldact_done, label %restore_after_copy_fault
+
+oldact_done:
   ret i64 %r
+
+restore_after_copy_fault:
+  %restore_native_act_i = ptrtoint ptr %native_oldact to i64
+  %restore_ignored = call i64 @__mtrt_linux_syscall4(i64 134, i64 %native_sig, i64 %restore_native_act_i, i64 0, i64 8)
+  br i1 %stored_remapped_phi, label %restore_previous_action_copy_fault, label %fault
+
+restore_previous_action_copy_fault:
+  call void @__mtrt_linux_store_target_action(i64 %sig, i64 %previous_handler_phi, i64 %previous_flags_phi)
+  br label %fault
 
 invalid:
   ret i64 -22
+
+fault:
+  ret i64 -14
 
 done:
   ret i64 %r
@@ -1414,7 +1496,13 @@ entry:
   br i1 %set_is_null, label %prep_oldset, label %copy_set
 
 copy_set:
-  %target_set = load i64, ptr %set, align 8
+  %target_set_p = alloca i64, align 8
+  %copy_set_in = call i64 @__mtrt_linux_copy_from_target(ptr %target_set_p, ptr %set, i64 8)
+  %copy_set_ok = icmp eq i64 %copy_set_in, 0
+  br i1 %copy_set_ok, label %load_set, label %fault
+
+load_set:
+  %target_set = load i64, ptr %target_set_p, align 8
   %native_set_value = call i64 @__mtrt_linux_sigset_to_native(i64 %target_set)
   %bad_set = icmp slt i64 %native_set_value, 0
   br i1 %bad_set, label %invalid, label %store_set
@@ -1445,11 +1533,25 @@ maybe_store_oldset:
 store_oldset:
   %native_old = load i64, ptr %native_oldset, align 8
   %target_old = call i64 @__mtrt_linux_sigset_from_native(i64 %native_old)
-  store i64 %target_old, ptr %oldset, align 8
+  %target_old_p = alloca i64, align 8
+  store i64 %target_old, ptr %target_old_p, align 8
+  %copy_oldset = call i64 @__mtrt_linux_copy_to_target(ptr %oldset, ptr %target_old_p, i64 8)
+  %copy_oldset_ok = icmp eq i64 %copy_oldset, 0
+  br i1 %copy_oldset_ok, label %oldset_done, label %restore_mask_after_copy_fault
+
+oldset_done:
   ret i64 %r
+
+restore_mask_after_copy_fault:
+  %restore_mask_i = ptrtoint ptr %native_oldset to i64
+  %restore_mask_ignored = call i64 @__mtrt_linux_syscall4(i64 135, i64 2, i64 %restore_mask_i, i64 0, i64 8)
+  br label %fault
 
 invalid:
   ret i64 -22
+
+fault:
+  ret i64 -14
 
 done:
   ret i64 %r
