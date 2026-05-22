@@ -657,6 +657,26 @@ entry:
   ret i64 %r5
 }
 
+define internal void @__mtrt_darwin_siginfo_to_target(ptr %target_info, ptr %native_info) {
+entry:
+  %native_signo32 = load i32, ptr %native_info, align 4
+  %native_signo = sext i32 %native_signo32 to i64
+  %target_signo = call i64 @__mtrt_darwin_signal_from_native(i64 %native_signo)
+  %target_signo32 = trunc i64 %target_signo to i32
+  store i32 %target_signo32, ptr %target_info, align 4
+  %native_errno_p = getelementptr i8, ptr %native_info, i64 4
+  %target_errno_p = getelementptr i8, ptr %target_info, i64 4
+  %errno = load i32, ptr %native_errno_p, align 4
+  store i32 %errno, ptr %target_errno_p, align 4
+  %native_code_p = getelementptr i8, ptr %native_info, i64 8
+  %target_code_p = getelementptr i8, ptr %target_info, i64 8
+  %code = load i32, ptr %native_code_p, align 4
+  store i32 %code, ptr %target_code_p, align 4
+  %target_pad_p = getelementptr i8, ptr %target_info, i64 12
+  store i32 0, ptr %target_pad_p, align 4
+  ret void
+}
+
 define internal void @__mtrt_darwin_dispatch_target_signal(i64 %target_sig, ptr %handler_slot, ptr %flags_slot, ptr %native_info, ptr %ucontext) {
 entry:
   %handler_i = load i64, ptr %handler_slot, align 8
@@ -679,17 +699,18 @@ call_simple:
 
 call_siginfo:
   %target_info = alloca [16 x i8], align 4
-  %target_sig32_info_store = trunc i64 %target_sig to i32
-  store i32 %target_sig32_info_store, ptr %target_info, align 4
-  %target_errno_p = getelementptr i8, ptr %target_info, i64 4
-  store i32 0, ptr %target_errno_p, align 4
-  %target_code_p = getelementptr i8, ptr %target_info, i64 8
-  store i32 0, ptr %target_code_p, align 4
-  %target_pad_p = getelementptr i8, ptr %target_info, i64 12
-  store i32 0, ptr %target_pad_p, align 4
+  %native_info_null = icmp eq ptr %native_info, null
+  br i1 %native_info_null, label %call_siginfo_handler, label %copy_siginfo
+
+copy_siginfo:
+  call void @__mtrt_darwin_siginfo_to_target(ptr %target_info, ptr %native_info)
+  br label %call_siginfo_handler
+
+call_siginfo_handler:
+  %info_arg = phi ptr [ null, %call_siginfo ], [ %target_info, %copy_siginfo ]
   %handler3 = inttoptr i64 %handler_i to ptr
   %target_sig32_info = trunc i64 %target_sig to i32
-  call void %handler3(i32 %target_sig32_info, ptr %target_info, ptr %ucontext)
+  call void %handler3(i32 %target_sig32_info, ptr %info_arg, ptr %ucontext)
   br label %done
 
 done:
