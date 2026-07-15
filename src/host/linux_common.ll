@@ -7,7 +7,154 @@ declare i8 @__mtrt_common_dtype(i8)
 declare i64 @__mtrt_name_len_bounded(ptr, i64)
 declare void @__mtrt_store_dent64(ptr, i64, i64, i8, ptr, i64)
 
-define i64 @__mtrt_linux_makedev(i32 %major32, i32 %minor32) {
+define hidden i64 @__mtrt_linux_open_flags_to_native(i64 %target) {
+entry:
+  %access = and i64 %target, 3
+  %creat = and i64 %target, 64
+  %excl = and i64 %target, 128
+  %trunc = and i64 %target, 512
+  %append = and i64 %target, 1024
+  %r0 = or i64 %access, %creat
+  %r1 = or i64 %r0, %excl
+  %r2 = or i64 %r1, %trunc
+  %native = or i64 %r2, %append
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_dirfd_to_native(i64 %target) {
+entry:
+  %is_fdcwd = icmp eq i64 %target, -100
+  %native = select i1 %is_fdcwd, i64 -100, i64 %target
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_access_mode_to_native(i64 %target) {
+entry:
+  %x = and i64 %target, 1
+  %w = and i64 %target, 2
+  %r = and i64 %target, 4
+  %xw = or i64 %x, %w
+  %native = or i64 %xw, %r
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_mode_to_native(i64 %target) {
+entry:
+  %native = and i64 %target, 4095
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_at_flags_to_native(i64 %target) {
+entry:
+  %nofollow = and i64 %target, 256
+  %bit512 = and i64 %target, 512
+  %follow = and i64 %target, 1024
+  %r0 = or i64 %nofollow, %bit512
+  %native = or i64 %r0, %follow
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_prot_to_native(i64 %target) {
+entry:
+  %read = and i64 %target, 1
+  %write = and i64 %target, 2
+  %exec = and i64 %target, 4
+  %rw = or i64 %read, %write
+  %native = or i64 %rw, %exec
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_mmap_flags_to_native(i64 %target) {
+entry:
+  %shared = and i64 %target, 1
+  %private = and i64 %target, 2
+  %fixed = and i64 %target, 16
+  %anonymous = and i64 %target, 32
+  %r0 = or i64 %shared, %private
+  %r1 = or i64 %r0, %fixed
+  %native = or i64 %r1, %anonymous
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_msync_flags_to_native(i64 %target) {
+entry:
+  %async = and i64 %target, 1
+  %invalidate = and i64 %target, 2
+  %sync = and i64 %target, 4
+  %r0 = or i64 %async, %invalidate
+  %native = or i64 %r0, %sync
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_madvise_to_native(i64 %target) {
+entry:
+  switch i64 %target, label %bad [
+    i64 0, label %normal
+    i64 1, label %random
+    i64 2, label %sequential
+    i64 3, label %willneed
+    i64 4, label %dontneed
+  ]
+
+normal:
+  ret i64 0
+
+random:
+  ret i64 1
+
+sequential:
+  ret i64 2
+
+willneed:
+  ret i64 3
+
+dontneed:
+  ret i64 4
+
+bad:
+  ret i64 -1
+}
+
+define hidden i64 @__mtrt_linux_lseek_to_native(i64 %target) {
+entry:
+  switch i64 %target, label %bad [
+    i64 0, label %set
+    i64 1, label %cur
+    i64 2, label %end
+  ]
+
+set:
+  ret i64 0
+
+cur:
+  ret i64 1
+
+end:
+  ret i64 2
+
+bad:
+  ret i64 -1
+}
+
+define hidden i64 @__mtrt_linux_wait_options_to_native(i64 %target) {
+entry:
+  %nohang = and i64 %target, 1
+  %untraced = and i64 %target, 2
+  %continued = and i64 %target, 8
+  %r0 = or i64 %nohang, %untraced
+  %native = or i64 %r0, %continued
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_pipe2_flags_to_native(i64 %target) {
+entry:
+  %nonblock = and i64 %target, 2048
+  %cloexec = and i64 %target, 524288
+  %native = or i64 %nonblock, %cloexec
+  ret i64 %native
+}
+
+define hidden i64 @__mtrt_linux_makedev(i32 %major32, i32 %minor32) {
 entry:
   %major = zext i32 %major32 to i64
   %minor = zext i32 %minor32 to i64
@@ -24,7 +171,7 @@ entry:
   ret i64 %dev
 }
 
-define i32 @__mtrt_linux_mode_from_native(i32 %mode) {
+define hidden i32 @__mtrt_linux_mode_from_native(i32 %mode) {
 entry:
   %perm = and i32 %mode, 4095
   %type = and i32 %mode, 61440
@@ -46,7 +193,7 @@ unknown:
   ret i32 %perm
 }
 
-define void @__mtrt_linux_store_statx(ptr %out, ptr %sx) {
+define hidden void @__mtrt_linux_store_statx(ptr %out, ptr %sx) {
 entry:
   %blksize_p = getelementptr i8, ptr %sx, i64 4
   %blksize32 = load i32, ptr %blksize_p, align 4
@@ -129,7 +276,7 @@ entry:
   ret void
 }
 
-define i64 @__mtrt_linux_translate_getdents64(ptr %buf, i64 %native_bytes) {
+define hidden i64 @__mtrt_linux_translate_getdents64(ptr %buf, i64 %native_bytes) {
 entry:
   br label %loop
 
@@ -185,7 +332,7 @@ bad:
   ret i64 -5
 }
 
-define i32 @__mtrt_linux_speed_to_native(i32 %speed) {
+define hidden i32 @__mtrt_linux_speed_to_native(i32 %speed) {
 entry:
   switch i32 %speed, label %bad [
     i32 0, label %s0
@@ -258,7 +405,7 @@ bad:
   ret i32 -1
 }
 
-define i32 @__mtrt_linux_native_speed_to_target(i32 %native) {
+define hidden i32 @__mtrt_linux_native_speed_to_target(i32 %native) {
 entry:
   switch i32 %native, label %bad [
     i32 0, label %s0
@@ -331,7 +478,7 @@ bad:
   ret i32 0
 }
 
-define i64 @__mtrt_linux_iflag_to_target(i64 %native) {
+define hidden i64 @__mtrt_linux_iflag_to_target(i64 %native) {
 entry:
   %n0 = and i64 %native, 1
   %has0 = icmp ne i64 %n0, 0
@@ -384,7 +531,7 @@ entry:
   ret i64 %acc11
 }
 
-define i64 @__mtrt_linux_iflag_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_iflag_to_native(i64 %target) {
 entry:
   %t0 = and i64 %target, 1
   %has0 = icmp ne i64 %t0, 0
@@ -437,7 +584,7 @@ entry:
   ret i64 %acc11
 }
 
-define i64 @__mtrt_linux_oflag_to_target(i64 %native) {
+define hidden i64 @__mtrt_linux_oflag_to_target(i64 %native) {
 entry:
   %n0 = and i64 %native, 1
   %has0 = icmp ne i64 %n0, 0
@@ -466,7 +613,7 @@ entry:
   ret i64 %acc5
 }
 
-define i64 @__mtrt_linux_oflag_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_oflag_to_native(i64 %target) {
 entry:
   %t0 = and i64 %target, 1
   %has0 = icmp ne i64 %t0, 0
@@ -495,7 +642,7 @@ entry:
   ret i64 %acc5
 }
 
-define i64 @__mtrt_linux_cflag_to_target(i64 %native) {
+define hidden i64 @__mtrt_linux_cflag_to_target(i64 %native) {
 entry:
   %size = and i64 %native, 48
   %is_cs6 = icmp eq i64 %size, 16
@@ -533,7 +680,7 @@ entry:
   ret i64 %f
 }
 
-define i64 @__mtrt_linux_cflag_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_cflag_to_native(i64 %target) {
 entry:
   %size = and i64 %target, 3
   %is_cs6 = icmp eq i64 %size, 1
@@ -571,7 +718,7 @@ entry:
   ret i64 %f
 }
 
-define i64 @__mtrt_linux_lflag_to_target(i64 %native) {
+define hidden i64 @__mtrt_linux_lflag_to_target(i64 %native) {
 entry:
   %n0 = and i64 %native, 8
   %has0 = icmp ne i64 %n0, 0
@@ -612,7 +759,7 @@ entry:
   ret i64 %acc8
 }
 
-define i64 @__mtrt_linux_lflag_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_lflag_to_native(i64 %target) {
 entry:
   %t0 = and i64 %target, 1
   %has0 = icmp ne i64 %t0, 0
@@ -653,7 +800,7 @@ entry:
   ret i64 %acc8
 }
 
-define void @__mtrt_linux_zero_target_cc(ptr %target) {
+define hidden void @__mtrt_linux_zero_target_cc(ptr %target) {
 entry:
   br label %loop
 
@@ -673,7 +820,7 @@ ret:
   ret void
 }
 
-define void @__mtrt_linux_copy_native_cc_to_target(ptr %target, ptr %native) {
+define hidden void @__mtrt_linux_copy_native_cc_to_target(ptr %target, ptr %native) {
 entry:
   call void @__mtrt_linux_zero_target_cc(ptr %target)
   br label %loop
@@ -697,7 +844,7 @@ ret:
   ret void
 }
 
-define void @__mtrt_linux_copy_target_cc_to_native(ptr %native, ptr %target) {
+define hidden void @__mtrt_linux_copy_target_cc_to_native(ptr %native, ptr %target) {
 entry:
   br label %loop
 
@@ -720,7 +867,7 @@ ret:
   ret void
 }
 
-define i1 @__mtrt_linux_termios_target_valid(ptr %target) {
+define hidden i1 @__mtrt_linux_termios_target_valid(ptr %target) {
 entry:
   %iflag = load i64, ptr %target, align 8
   %if_extra = and i64 %iflag, -4096
@@ -769,7 +916,7 @@ bad:
   ret i1 false
 }
 
-define void @__mtrt_linux_store_target_termios(ptr %target, ptr %native) {
+define hidden void @__mtrt_linux_store_target_termios(ptr %target, ptr %native) {
 entry:
   %if32 = load i32, ptr %native, align 4
   %if64 = zext i32 %if32 to i64
@@ -810,7 +957,7 @@ entry:
   ret void
 }
 
-define void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %target) {
+define hidden void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %target) {
 entry:
   %iflag = load i64, ptr %target, align 8
   %if_native = call i64 @__mtrt_linux_iflag_to_native(i64 %iflag)
@@ -865,7 +1012,7 @@ entry:
   ret void
 }
 
-define i64 @__mtrt_linux_tcsetattr_request(i64 %action) {
+define hidden i64 @__mtrt_linux_tcsetattr_request(i64 %action) {
 entry:
   switch i64 %action, label %bad [
     i64 0, label %now
@@ -886,7 +1033,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_linux_tcflow_action(i64 %action) {
+define hidden i64 @__mtrt_linux_tcflow_action(i64 %action) {
 entry:
   switch i64 %action, label %bad [
     i64 0, label %ok0
@@ -911,7 +1058,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_linux_tcflush_selector(i64 %selector) {
+define hidden i64 @__mtrt_linux_tcflush_selector(i64 %selector) {
 entry:
   switch i64 %selector, label %bad [
     i64 0, label %ok0
@@ -932,7 +1079,7 @@ bad:
   ret i64 -1
 }
 
-define i32 @__mtrt_linux_wait_status_from_native(i32 %status) {
+define hidden i32 @__mtrt_linux_wait_status_from_native(i32 %status) {
 entry:
   %low = and i32 %status, 255
   %is_exited = icmp eq i32 %low, 0
@@ -973,7 +1120,7 @@ preserve:
   ret i32 %status
 }
 
-define i64 @__mtrt_linux_clockid_from_target(i64 %clockid) {
+define hidden i64 @__mtrt_linux_clockid_from_target(i64 %clockid) {
 entry:
   switch i64 %clockid, label %invalid [
     i64 0, label %realtime
@@ -990,7 +1137,7 @@ invalid:
   ret i64 -22
 }
 
-define i64 @__mtrt_linux_signal_to_native(i64 %sig) {
+define hidden i64 @__mtrt_linux_signal_to_native(i64 %sig) {
 entry:
   switch i64 %sig, label %invalid [
     i64 0, label %same
@@ -1036,7 +1183,7 @@ invalid:
   ret i64 -22
 }
 
-define i64 @__mtrt_linux_signal_from_native(i64 %sig) {
+define hidden i64 @__mtrt_linux_signal_from_native(i64 %sig) {
 entry:
   switch i64 %sig, label %same [
     i64 17, label %sigchld
@@ -1061,7 +1208,7 @@ same:
   ret i64 %sig
 }
 
-define i64 @__mtrt_linux_sigset_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_sigset_to_native(i64 %target) {
 entry:
   %known = and i64 %target, 4161535
   %unknown = xor i64 %target, %known
@@ -1096,7 +1243,7 @@ map:
   ret i64 %r5
 }
 
-define i64 @__mtrt_linux_sigset_from_native(i64 %native) {
+define hidden i64 @__mtrt_linux_sigset_from_native(i64 %native) {
 entry:
   %base = and i64 %native, 32767
   %native_stop = and i64 %native, 262144
@@ -1122,7 +1269,7 @@ entry:
   ret i64 %r5
 }
 
-define void @__mtrt_linux_siginfo_to_target(ptr %target_info, ptr %native_info) {
+define hidden void @__mtrt_linux_siginfo_to_target(ptr %target_info, ptr %native_info) {
 entry:
   %native_signo32 = load i32, ptr %native_info, align 4
   %native_signo = sext i32 %native_signo32 to i64
@@ -1142,7 +1289,7 @@ entry:
   ret void
 }
 
-define i64 @__mtrt_linux_fcntl_cmd_from_target(i64 %cmd) {
+define hidden i64 @__mtrt_linux_fcntl_cmd_from_target(i64 %cmd) {
 entry:
   switch i64 %cmd, label %bad [
     i64 0, label %dupfd
@@ -1183,13 +1330,13 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_linux_fd_flags_from_native(i64 %native) {
+define hidden i64 @__mtrt_linux_fd_flags_from_native(i64 %native) {
 entry:
   %clo = and i64 %native, 1
   ret i64 %clo
 }
 
-define i64 @__mtrt_linux_fd_flags_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_fd_flags_to_native(i64 %target) {
 entry:
   %known = and i64 %target, 1
   %unknown = xor i64 %target, %known
@@ -1198,7 +1345,7 @@ entry:
   ret i64 %ret
 }
 
-define i64 @__mtrt_linux_status_flags_from_native(i64 %native) {
+define hidden i64 @__mtrt_linux_status_flags_from_native(i64 %native) {
 entry:
   %access = and i64 %native, 3
   %append_bits = and i64 %native, 1024
@@ -1212,7 +1359,7 @@ entry:
   ret i64 %ret
 }
 
-define i64 @__mtrt_linux_status_flags_to_native(i64 %target) {
+define hidden i64 @__mtrt_linux_status_flags_to_native(i64 %target) {
 entry:
   %known = and i64 %target, 3075
   %unknown = xor i64 %target, %known
@@ -1231,7 +1378,7 @@ entry:
   ret i64 %ret
 }
 
-define i64 @__mtrt_linux_flock_type_to_native(i16 %target) {
+define hidden i64 @__mtrt_linux_flock_type_to_native(i16 %target) {
 entry:
   switch i16 %target, label %bad [
     i16 0, label %rd
@@ -1252,7 +1399,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_linux_flock_type_from_native(i16 %native) {
+define hidden i64 @__mtrt_linux_flock_type_from_native(i16 %native) {
 entry:
   switch i16 %native, label %bad [
     i16 0, label %rd
@@ -1273,7 +1420,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_linux_flock_target_to_native(ptr %target, ptr %native) {
+define hidden i64 @__mtrt_linux_flock_target_to_native(ptr %target, ptr %native) {
 entry:
   %target_type = load i16, ptr %target, align 2
   %native_type = call i64 @__mtrt_linux_flock_type_to_native(i16 %target_type)
@@ -1312,7 +1459,7 @@ invalid:
   ret i64 -22
 }
 
-define i64 @__mtrt_linux_flock_native_to_target(ptr %target, ptr %native) {
+define hidden i64 @__mtrt_linux_flock_native_to_target(ptr %target, ptr %native) {
 entry:
   %native_type = load i16, ptr %native, align 2
   %target_type = call i64 @__mtrt_linux_flock_type_from_native(i16 %native_type)
@@ -1350,4 +1497,3 @@ copy:
 invalid:
   ret i64 -22
 }
-

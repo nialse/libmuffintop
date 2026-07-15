@@ -3,62 +3,395 @@ target triple = "arm64-apple-macosx13.0.0"
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
 @.mtrt_dot = private unnamed_addr constant [2 x i8] c".\00"
-@__mtrt_platform_uname_sys = constant [7 x i8] c"Darwin\0A", align 1
-@__mtrt_platform_uname_sys_len = constant i64 7, align 8
-@__mtrt_platform_uname_all = constant [27 x i8] c"Darwin muffintop 0 0 arm64\0A", align 1
-@__mtrt_platform_uname_all_len = constant i64 27, align 8
-@__mtrt_darwin_handler_sig7 = internal global i64 0, align 8
-@__mtrt_darwin_handler_sig10 = internal global i64 0, align 8
-@__mtrt_darwin_handler_sig12 = internal global i64 0, align 8
-@__mtrt_darwin_flags_sig7 = internal global i64 0, align 8
-@__mtrt_darwin_flags_sig10 = internal global i64 0, align 8
-@__mtrt_darwin_flags_sig12 = internal global i64 0, align 8
+@__mtrt_platform_uname_sys = hidden constant [7 x i8] c"Darwin\0A", align 1
+@__mtrt_platform_uname_sys_len = hidden constant i64 7, align 8
+@__mtrt_platform_uname_all = hidden constant [27 x i8] c"Darwin muffintop 0 0 arm64\0A", align 1
+@__mtrt_platform_uname_all_len = hidden constant i64 27, align 8
+@__mtrt_darwin_target_handlers = internal global [23 x i64] zeroinitializer, align 8
+@__mtrt_darwin_target_flags = internal global [23 x i64] zeroinitializer, align 8
 
 declare i8 @__mtrt_common_dtype(i8)
 declare i64 @__mtrt_strlen(ptr)
 declare void @__mtrt_copy_cstr(ptr, ptr, i64)
 declare void @__mtrt_store_dent64(ptr, i64, i64, i8, ptr, i64)
 
+define internal i64 @__mtrt_darwin_result_to_target(i64 %result) {
+entry:
+  %failed = icmp slt i64 %result, 0
+  br i1 %failed, label %translate, label %done
+
+translate:
+  %native = sub i64 0, %result
+  switch i64 %native, label %eio [
+    i64 1, label %same
+    i64 2, label %same
+    i64 3, label %same
+    i64 4, label %same
+    i64 5, label %same
+    i64 6, label %same
+    i64 7, label %same
+    i64 8, label %same
+    i64 9, label %same
+    i64 10, label %same
+    i64 11, label %edeadlk
+    i64 12, label %same
+    i64 13, label %same
+    i64 14, label %same
+    i64 15, label %same
+    i64 16, label %same
+    i64 17, label %same
+    i64 18, label %same
+    i64 19, label %same
+    i64 20, label %same
+    i64 21, label %same
+    i64 22, label %same
+    i64 23, label %same
+    i64 24, label %same
+    i64 25, label %same
+    i64 26, label %same
+    i64 27, label %same
+    i64 28, label %same
+    i64 29, label %same
+    i64 30, label %same
+    i64 31, label %same
+    i64 32, label %same
+    i64 33, label %same
+    i64 34, label %same
+    i64 35, label %eagain
+    i64 36, label %einprogress
+    i64 37, label %ealready
+    i64 38, label %enotsock
+    i64 39, label %edestaddrreq
+    i64 40, label %emsgsize
+    i64 41, label %eprototype
+    i64 42, label %enoprotoopt
+    i64 43, label %eprotonosupport
+    i64 44, label %esocktnosupport
+    i64 45, label %eopnotsupp
+    i64 46, label %epfnosupport
+    i64 47, label %eafnosupport
+    i64 48, label %eaddrinuse
+    i64 49, label %eaddrnotavail
+    i64 50, label %enetdown
+    i64 51, label %enetunreach
+    i64 52, label %enetreset
+    i64 53, label %econnaborted
+    i64 54, label %econnreset
+    i64 55, label %enobufs
+    i64 56, label %eisconn
+    i64 57, label %enotconn
+    i64 58, label %eshutdown
+    i64 59, label %etoomanyrefs
+    i64 60, label %etimedout
+    i64 61, label %econnrefused
+    i64 62, label %eloop
+    i64 63, label %enametoolong
+    i64 64, label %ehostdown
+    i64 65, label %ehostunreach
+    i64 66, label %enotempty
+    i64 67, label %eagain
+    i64 68, label %eusers
+    i64 69, label %edquot
+    i64 70, label %estale
+    i64 71, label %eremote
+    i64 72, label %eproto
+    i64 73, label %eproto
+    i64 74, label %eproto
+    i64 75, label %eproto
+    i64 76, label %eproto
+    i64 77, label %enolck
+    i64 78, label %enosys
+    i64 79, label %einval
+    i64 80, label %eacces
+    i64 81, label %eacces
+    i64 82, label %eio
+    i64 83, label %eio
+    i64 84, label %eoverflow
+    i64 85, label %enoexec
+    i64 86, label %enoexec
+    i64 87, label %enoexec
+    i64 88, label %enoexec
+    i64 89, label %ecanceled
+    i64 90, label %eidrm
+    i64 91, label %enomsg
+    i64 92, label %eilseq
+    i64 93, label %enodata
+    i64 94, label %ebadmsg
+    i64 95, label %emultihop
+    i64 96, label %enodata
+    i64 97, label %enolink
+    i64 98, label %enosr
+    i64 99, label %enostr
+    i64 100, label %eproto
+    i64 101, label %etime
+    i64 102, label %eopnotsupp
+    i64 103, label %eperm
+    i64 104, label %enotrecoverable
+    i64 105, label %eownerdead
+    i64 106, label %enobufs
+    i64 107, label %eperm
+  ]
+
+same:
+  ret i64 %result
+
+eperm:
+  ret i64 -1
+
+enoexec:
+  ret i64 -8
+
+eagain:
+  ret i64 -11
+
+eacces:
+  ret i64 -13
+
+einval:
+  ret i64 -22
+
+edeadlk:
+  ret i64 -35
+
+enametoolong:
+  ret i64 -36
+
+enolck:
+  ret i64 -37
+
+enosys:
+  ret i64 -38
+
+enotempty:
+  ret i64 -39
+
+eloop:
+  ret i64 -40
+
+enomsg:
+  ret i64 -42
+
+eidrm:
+  ret i64 -43
+
+enostr:
+  ret i64 -60
+
+enodata:
+  ret i64 -61
+
+etime:
+  ret i64 -62
+
+enosr:
+  ret i64 -63
+
+eremote:
+  ret i64 -66
+
+enolink:
+  ret i64 -67
+
+eproto:
+  ret i64 -71
+
+emultihop:
+  ret i64 -72
+
+ebadmsg:
+  ret i64 -74
+
+eoverflow:
+  ret i64 -75
+
+eilseq:
+  ret i64 -84
+
+eusers:
+  ret i64 -87
+
+enotsock:
+  ret i64 -88
+
+edestaddrreq:
+  ret i64 -89
+
+emsgsize:
+  ret i64 -90
+
+eprototype:
+  ret i64 -91
+
+enoprotoopt:
+  ret i64 -92
+
+eprotonosupport:
+  ret i64 -93
+
+esocktnosupport:
+  ret i64 -94
+
+eopnotsupp:
+  ret i64 -95
+
+epfnosupport:
+  ret i64 -96
+
+eafnosupport:
+  ret i64 -97
+
+eaddrinuse:
+  ret i64 -98
+
+eaddrnotavail:
+  ret i64 -99
+
+enetdown:
+  ret i64 -100
+
+enetunreach:
+  ret i64 -101
+
+enetreset:
+  ret i64 -102
+
+econnaborted:
+  ret i64 -103
+
+econnreset:
+  ret i64 -104
+
+enobufs:
+  ret i64 -105
+
+eisconn:
+  ret i64 -106
+
+enotconn:
+  ret i64 -107
+
+eshutdown:
+  ret i64 -108
+
+etoomanyrefs:
+  ret i64 -109
+
+etimedout:
+  ret i64 -110
+
+econnrefused:
+  ret i64 -111
+
+ehostdown:
+  ret i64 -112
+
+ehostunreach:
+  ret i64 -113
+
+ealready:
+  ret i64 -114
+
+einprogress:
+  ret i64 -115
+
+estale:
+  ret i64 -116
+
+edquot:
+  ret i64 -122
+
+ecanceled:
+  ret i64 -125
+
+eownerdead:
+  ret i64 -130
+
+enotrecoverable:
+  ret i64 -131
+
+eio:
+  ret i64 -5
+
+done:
+  ret i64 %result
+}
+
+define internal i32 @__mtrt_darwin_sigcode_to_target(i32 %native) {
+entry:
+  switch i32 %native, label %kernel [
+    i32 65537, label %user
+    i32 65538, label %queue
+    i32 65539, label %timer
+    i32 65540, label %asyncio
+    i32 65541, label %mesgq
+  ]
+
+user:
+  ret i32 0
+
+queue:
+  ret i32 -1
+
+timer:
+  ret i32 -2
+
+mesgq:
+  ret i32 -3
+
+asyncio:
+  ret i32 -4
+
+kernel:
+  ret i32 128
+}
+
 define internal i64 @__mtrt_darwin_syscall0(i64 %nr) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $1\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},r,~{x16},~{memory},~{cc}"(i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_syscall1(i64 %nr, i64 %a0) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $2\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_syscall2(i64 %nr, i64 %a0, i64 %a1) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $3\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},{x1},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %a1, i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_syscall3(i64 %nr, i64 %a0, i64 %a1, i64 %a2) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $4\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},{x1},{x2},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %a1, i64 %a2, i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_syscall4(i64 %nr, i64 %a0, i64 %a1, i64 %a2, i64 %a3) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $5\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},{x1},{x2},{x3},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_syscall5(i64 %nr, i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %a4) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $6\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},{x1},{x2},{x3},{x4},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_syscall6(i64 %nr, i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5) {
 entry:
   %r = call i64 asm sideeffect "mov x16, $7\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A1:", "={x0},{x0},{x1},{x2},{x3},{x4},{x5},r,~{x16},~{memory},~{cc}"(i64 %a0, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5, i64 %nr)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_clock_sleep_trap(i64 %clock, i64 %sleep_type, i64 %sec, i64 %nsec, ptr %rem) {
@@ -97,13 +430,125 @@ define internal i64 @__mtrt_darwin_pipe(ptr %fds) {
 entry:
   %fds_i = ptrtoint ptr %fds to i64
   %r = call i64 asm sideeffect "mov x9, $1\0A mov x16, #42\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A b 2f\0A1:\0A stp w0, w1, [x9]\0A mov x0, #0\0A2:", "={x0},r,~{x1},~{x9},~{x16},~{memory},~{cc}"(i64 %fds_i)
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
+}
+
+define internal i64 @__mtrt_darwin_copy_from_target(ptr %dst, ptr %src, i64 %len) {
+entry:
+  %zero = icmp eq i64 %len, 0
+  br i1 %zero, label %success, label %open_pipe
+
+open_pipe:
+  %fds = alloca [2 x i32], align 4
+  %opened = call i64 @__mtrt_darwin_pipe(ptr %fds)
+  %open_failed = icmp slt i64 %opened, 0
+  br i1 %open_failed, label %open_error, label %write_source
+
+write_source:
+  %read_fd_p = getelementptr i8, ptr %fds, i64 0
+  %write_fd_p = getelementptr i8, ptr %fds, i64 4
+  %read_fd32 = load i32, ptr %read_fd_p, align 4
+  %write_fd32 = load i32, ptr %write_fd_p, align 4
+  %read_fd = sext i32 %read_fd32 to i64
+  %write_fd = sext i32 %write_fd32 to i64
+  %src_i = ptrtoint ptr %src to i64
+  %written = call i64 @__mtrt_darwin_syscall3(i64 4, i64 %write_fd, i64 %src_i, i64 %len)
+  %write_complete = icmp eq i64 %written, %len
+  br i1 %write_complete, label %read_scratch, label %close_write_error
+
+read_scratch:
+  %dst_i = ptrtoint ptr %dst to i64
+  %read = call i64 @__mtrt_darwin_syscall3(i64 3, i64 %read_fd, i64 %dst_i, i64 %len)
+  %read_complete = icmp eq i64 %read, %len
+  br i1 %read_complete, label %close_success, label %close_read_error
+
+close_success:
+  %close_read_ok = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write_ok = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  br label %success
+
+close_write_error:
+  %close_read_after_write = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write_after_write = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  %write_is_error = icmp slt i64 %written, 0
+  %write_result = select i1 %write_is_error, i64 %written, i64 -5
+  ret i64 %write_result
+
+close_read_error:
+  %close_read_after_read = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write_after_read = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  %read_is_error = icmp slt i64 %read, 0
+  %read_result = select i1 %read_is_error, i64 %read, i64 -5
+  ret i64 %read_result
+
+open_error:
+  ret i64 %opened
+
+success:
+  ret i64 0
+}
+
+define internal i64 @__mtrt_darwin_copy_to_target(ptr %dst, ptr %src, i64 %len) {
+entry:
+  %zero = icmp eq i64 %len, 0
+  br i1 %zero, label %success, label %open_pipe
+
+open_pipe:
+  %fds = alloca [2 x i32], align 4
+  %opened = call i64 @__mtrt_darwin_pipe(ptr %fds)
+  %open_failed = icmp slt i64 %opened, 0
+  br i1 %open_failed, label %open_error, label %write_scratch
+
+write_scratch:
+  %read_fd_p = getelementptr i8, ptr %fds, i64 0
+  %write_fd_p = getelementptr i8, ptr %fds, i64 4
+  %read_fd32 = load i32, ptr %read_fd_p, align 4
+  %write_fd32 = load i32, ptr %write_fd_p, align 4
+  %read_fd = sext i32 %read_fd32 to i64
+  %write_fd = sext i32 %write_fd32 to i64
+  %src_i = ptrtoint ptr %src to i64
+  %written = call i64 @__mtrt_darwin_syscall3(i64 4, i64 %write_fd, i64 %src_i, i64 %len)
+  %write_complete = icmp eq i64 %written, %len
+  br i1 %write_complete, label %read_target, label %close_write_error
+
+read_target:
+  %dst_i = ptrtoint ptr %dst to i64
+  %read = call i64 @__mtrt_darwin_syscall3(i64 3, i64 %read_fd, i64 %dst_i, i64 %len)
+  %read_complete = icmp eq i64 %read, %len
+  br i1 %read_complete, label %close_success, label %close_read_error
+
+close_success:
+  %close_read_ok = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write_ok = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  br label %success
+
+close_write_error:
+  %close_read_after_write = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write_after_write = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  %write_is_error = icmp slt i64 %written, 0
+  %write_result = select i1 %write_is_error, i64 %written, i64 -5
+  ret i64 %write_result
+
+close_read_error:
+  %close_read_after_read = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write_after_read = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  %read_is_error = icmp slt i64 %read, 0
+  %read_result = select i1 %read_is_error, i64 %read, i64 -5
+  ret i64 %read_result
+
+open_error:
+  ret i64 %opened
+
+success:
+  ret i64 0
 }
 
 define internal i64 @__mtrt_darwin_fork() {
 entry:
   %r = call i64 asm sideeffect "mov x16, #2\0A svc #0x80\0A b.cc 1f\0A neg x0, x0\0A b 2f\0A1:\0A cbz x1, 2f\0A mov x0, #0\0A2:", "={x0},~{x1},~{x16},~{memory},~{cc}"()
-  ret i64 %r
+  %target = call i64 @__mtrt_darwin_result_to_target(i64 %r)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_darwin_translate_getdirentries64(ptr %buf, i64 %native_bytes) {
@@ -199,6 +644,98 @@ entry:
   %append_value = select i1 %has_append, i32 8, i32 0
   %mapped = or i32 %with_trunc, %append_value
   ret i32 %mapped
+}
+
+define internal i64 @__mtrt_darwin_access_mode_from_target(i64 %target) {
+entry:
+  %x = and i64 %target, 1
+  %w = and i64 %target, 2
+  %r = and i64 %target, 4
+  %xw = or i64 %x, %w
+  %native = or i64 %xw, %r
+  ret i64 %native
+}
+
+define internal i64 @__mtrt_darwin_mode_from_target(i64 %target) {
+entry:
+  %native = and i64 %target, 4095
+  ret i64 %native
+}
+
+define internal i64 @__mtrt_darwin_prot_from_target(i64 %target) {
+entry:
+  %read = and i64 %target, 1
+  %write = and i64 %target, 2
+  %exec = and i64 %target, 4
+  %rw = or i64 %read, %write
+  %native = or i64 %rw, %exec
+  ret i64 %native
+}
+
+define internal i64 @__mtrt_darwin_lseek_from_target(i64 %target) {
+entry:
+  switch i64 %target, label %bad [
+    i64 0, label %set
+    i64 1, label %cur
+    i64 2, label %end
+  ]
+
+set:
+  ret i64 0
+
+cur:
+  ret i64 1
+
+end:
+  ret i64 2
+
+bad:
+  ret i64 -1
+}
+
+define internal i64 @__mtrt_darwin_madvise_from_target(i64 %target) {
+entry:
+  switch i64 %target, label %bad [
+    i64 0, label %normal
+    i64 1, label %random
+    i64 2, label %sequential
+    i64 3, label %willneed
+    i64 4, label %dontneed
+  ]
+
+normal:
+  ret i64 0
+
+random:
+  ret i64 1
+
+sequential:
+  ret i64 2
+
+willneed:
+  ret i64 3
+
+dontneed:
+  ret i64 4
+
+bad:
+  ret i64 -1
+}
+
+define internal i64 @__mtrt_darwin_wait_options_from_target(i64 %target) {
+entry:
+  %nohang_bits = and i64 %target, 1
+  %has_nohang = icmp ne i64 %nohang_bits, 0
+  %nohang = select i1 %has_nohang, i64 1, i64 0
+  %untraced_bits = and i64 %target, 2
+  %has_untraced = icmp ne i64 %untraced_bits, 0
+  %untraced = select i1 %has_untraced, i64 2, i64 0
+  %continued_bits = and i64 %target, 8
+  %has_continued = icmp ne i64 %continued_bits, 0
+  %continued = select i1 %has_continued, i64 16, i64 0
+  %r0 = or i64 %nohang, %untraced
+  %native = or i64 %r0, %continued
+  ret i64 %native
 }
 
 define internal i32 @__mtrt_darwin_mmap_flags_from_target(i32 %flags) {
@@ -541,14 +1078,65 @@ entry:
   store i32 %target_signo32, ptr %target_info, align 4
   %native_errno_p = getelementptr i8, ptr %native_info, i64 4
   %target_errno_p = getelementptr i8, ptr %target_info, i64 4
-  %errno = load i32, ptr %native_errno_p, align 4
-  store i32 %errno, ptr %target_errno_p, align 4
+  %native_errno32 = load i32, ptr %native_errno_p, align 4
+  %native_errno = zext i32 %native_errno32 to i64
+  %native_error = sub i64 0, %native_errno
+  %target_error = call i64 @__mtrt_darwin_result_to_target(i64 %native_error)
+  %target_errno = sub i64 0, %target_error
+  %target_errno32 = trunc i64 %target_errno to i32
+  store i32 %target_errno32, ptr %target_errno_p, align 4
   %native_code_p = getelementptr i8, ptr %native_info, i64 8
   %target_code_p = getelementptr i8, ptr %target_info, i64 8
-  %code = load i32, ptr %native_code_p, align 4
-  store i32 %code, ptr %target_code_p, align 4
+  %native_code = load i32, ptr %native_code_p, align 4
+  %target_code = call i32 @__mtrt_darwin_sigcode_to_target(i32 %native_code)
+  store i32 %target_code, ptr %target_code_p, align 4
   %target_pad_p = getelementptr i8, ptr %target_info, i64 12
   store i32 0, ptr %target_pad_p, align 4
+  ret void
+}
+
+define internal void @__mtrt_darwin_build_ucontext_v1(ptr %target_context) {
+entry:
+  %native_mask_p = alloca i32, align 4
+  %native_stack = alloca [24 x i8], align 8
+  store i32 0, ptr %native_mask_p, align 4
+  store i64 0, ptr %native_stack, align 8
+  %native_stack_size_p = getelementptr i8, ptr %native_stack, i64 8
+  store i64 0, ptr %native_stack_size_p, align 8
+  %native_stack_flags_p = getelementptr i8, ptr %native_stack, i64 16
+  store i32 0, ptr %native_stack_flags_p, align 4
+  %mask_i = ptrtoint ptr %native_mask_p to i64
+  %mask_r = call i64 @__mtrt_darwin_syscall3(i64 48, i64 1, i64 0, i64 %mask_i)
+  %stack_i = ptrtoint ptr %native_stack to i64
+  %stack_r = call i64 @__mtrt_darwin_syscall2(i64 53, i64 0, i64 %stack_i)
+  %native_mask32 = load i32, ptr %native_mask_p, align 4
+  %native_mask = zext i32 %native_mask32 to i64
+  %mask_ok = icmp eq i64 %mask_r, 0
+  %target_mask_value = call i64 @__mtrt_darwin_sigset_from_native(i64 %native_mask)
+  %target_mask = select i1 %mask_ok, i64 %target_mask_value, i64 0
+  %stack_address = load i64, ptr %native_stack, align 8
+  %stack_size = load i64, ptr %native_stack_size_p, align 8
+  %native_stack_flags = load i32, ptr %native_stack_flags_p, align 4
+  %onstack = and i32 %native_stack_flags, 1
+  %disable_bits = and i32 %native_stack_flags, 4
+  %disabled = icmp ne i32 %disable_bits, 0
+  %disable = select i1 %disabled, i32 2, i32 0
+  %stack_flags = or i32 %onstack, %disable
+  %stack_ok = icmp eq i64 %stack_r, 0
+  %target_stack_address = select i1 %stack_ok, i64 %stack_address, i64 0
+  %target_stack_size = select i1 %stack_ok, i64 %stack_size, i64 0
+  %target_stack_flags = select i1 %stack_ok, i32 %stack_flags, i32 0
+  store i64 1, ptr %target_context, align 8
+  %mask_out = getelementptr i8, ptr %target_context, i64 8
+  store i64 %target_mask, ptr %mask_out, align 8
+  %stack_address_out = getelementptr i8, ptr %target_context, i64 16
+  store i64 %target_stack_address, ptr %stack_address_out, align 8
+  %stack_size_out = getelementptr i8, ptr %target_context, i64 24
+  store i64 %target_stack_size, ptr %stack_size_out, align 8
+  %stack_flags_out = getelementptr i8, ptr %target_context, i64 32
+  store i32 %target_stack_flags, ptr %stack_flags_out, align 4
+  %reserved_out = getelementptr i8, ptr %target_context, i64 36
+  store i32 0, ptr %reserved_out, align 4
   ret void
 }
 
@@ -574,6 +1162,8 @@ call_simple:
 
 call_siginfo:
   %target_info = alloca [16 x i8], align 4
+  %target_context = alloca [40 x i8], align 8
+  call void @__mtrt_darwin_build_ucontext_v1(ptr %target_context)
   %native_info_null = icmp eq ptr %native_info, null
   br i1 %native_info_null, label %call_siginfo_handler, label %copy_siginfo
 
@@ -585,127 +1175,49 @@ call_siginfo_handler:
   %info_arg = phi ptr [ null, %call_siginfo ], [ %target_info, %copy_siginfo ]
   %handler3 = inttoptr i64 %handler_i to ptr
   %target_sig32_info = trunc i64 %target_sig to i32
-  call void %handler3(i32 %target_sig32_info, ptr %info_arg, ptr %ucontext)
+  call void %handler3(i32 %target_sig32_info, ptr %info_arg, ptr %target_context)
   br label %done
 
 done:
   ret void
 }
 
-define internal void @__mtrt_darwin_dispatch_sig7(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+define internal void @__mtrt_darwin_dispatch_any(i32 %native_sig32, ptr %native_info, ptr %ucontext) {
 entry:
-  call void @__mtrt_darwin_dispatch_target_signal(i64 7, ptr @__mtrt_darwin_handler_sig7, ptr @__mtrt_darwin_flags_sig7, ptr %native_info, ptr %ucontext)
-  ret void
-}
-
-define internal void @__mtrt_darwin_dispatch_sig10(i32 %native_sig, ptr %native_info, ptr %ucontext) {
-entry:
-  call void @__mtrt_darwin_dispatch_target_signal(i64 10, ptr @__mtrt_darwin_handler_sig10, ptr @__mtrt_darwin_flags_sig10, ptr %native_info, ptr %ucontext)
-  ret void
-}
-
-define internal void @__mtrt_darwin_dispatch_sig12(i32 %native_sig, ptr %native_info, ptr %ucontext) {
-entry:
-  call void @__mtrt_darwin_dispatch_target_signal(i64 12, ptr @__mtrt_darwin_handler_sig12, ptr @__mtrt_darwin_flags_sig12, ptr %native_info, ptr %ucontext)
+  %native_sig = zext i32 %native_sig32 to i64
+  %target_sig = call i64 @__mtrt_darwin_signal_from_native(i64 %native_sig)
+  %handler_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_darwin_target_handlers, i64 0, i64 %target_sig
+  %flags_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_darwin_target_flags, i64 0, i64 %target_sig
+  call void @__mtrt_darwin_dispatch_target_signal(i64 %target_sig, ptr %handler_slot, ptr %flags_slot, ptr %native_info, ptr %ucontext)
   ret void
 }
 
 define internal i64 @__mtrt_darwin_sigaction_dispatcher(i64 %sig) {
 entry:
-  switch i64 %sig, label %none [
-    i64 7, label %sig7
-    i64 10, label %sig10
-    i64 12, label %sig12
-  ]
-
-sig7:
-  %d7 = ptrtoint ptr @__mtrt_darwin_dispatch_sig7 to i64
-  ret i64 %d7
-
-sig10:
-  %d10 = ptrtoint ptr @__mtrt_darwin_dispatch_sig10 to i64
-  ret i64 %d10
-
-sig12:
-  %d12 = ptrtoint ptr @__mtrt_darwin_dispatch_sig12 to i64
-  ret i64 %d12
-
-none:
-  ret i64 0
+  %dispatcher = ptrtoint ptr @__mtrt_darwin_dispatch_any to i64
+  ret i64 %dispatcher
 }
 
 define internal i64 @__mtrt_darwin_load_target_handler(i64 %sig) {
 entry:
-  switch i64 %sig, label %none [
-    i64 7, label %sig7
-    i64 10, label %sig10
-    i64 12, label %sig12
-  ]
-
-sig7:
-  %h7 = load i64, ptr @__mtrt_darwin_handler_sig7, align 8
-  ret i64 %h7
-
-sig10:
-  %h10 = load i64, ptr @__mtrt_darwin_handler_sig10, align 8
-  ret i64 %h10
-
-sig12:
-  %h12 = load i64, ptr @__mtrt_darwin_handler_sig12, align 8
-  ret i64 %h12
-
-none:
-  ret i64 0
+  %slot = getelementptr inbounds [23 x i64], ptr @__mtrt_darwin_target_handlers, i64 0, i64 %sig
+  %handler = load i64, ptr %slot, align 8
+  ret i64 %handler
 }
 
 define internal i64 @__mtrt_darwin_load_target_flags(i64 %sig) {
 entry:
-  switch i64 %sig, label %none [
-    i64 7, label %sig7
-    i64 10, label %sig10
-    i64 12, label %sig12
-  ]
-
-sig7:
-  %f7 = load i64, ptr @__mtrt_darwin_flags_sig7, align 8
-  ret i64 %f7
-
-sig10:
-  %f10 = load i64, ptr @__mtrt_darwin_flags_sig10, align 8
-  ret i64 %f10
-
-sig12:
-  %f12 = load i64, ptr @__mtrt_darwin_flags_sig12, align 8
-  ret i64 %f12
-
-none:
-  ret i64 0
+  %slot = getelementptr inbounds [23 x i64], ptr @__mtrt_darwin_target_flags, i64 0, i64 %sig
+  %flags = load i64, ptr %slot, align 8
+  ret i64 %flags
 }
 
 define internal void @__mtrt_darwin_store_target_action(i64 %sig, i64 %handler, i64 %flags) {
 entry:
-  switch i64 %sig, label %done [
-    i64 7, label %sig7
-    i64 10, label %sig10
-    i64 12, label %sig12
-  ]
-
-sig7:
-  store i64 %handler, ptr @__mtrt_darwin_handler_sig7, align 8
-  store i64 %flags, ptr @__mtrt_darwin_flags_sig7, align 8
-  br label %done
-
-sig10:
-  store i64 %handler, ptr @__mtrt_darwin_handler_sig10, align 8
-  store i64 %flags, ptr @__mtrt_darwin_flags_sig10, align 8
-  br label %done
-
-sig12:
-  store i64 %handler, ptr @__mtrt_darwin_handler_sig12, align 8
-  store i64 %flags, ptr @__mtrt_darwin_flags_sig12, align 8
-  br label %done
-
-done:
+  %handler_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_darwin_target_handlers, i64 0, i64 %sig
+  %flags_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_darwin_target_flags, i64 0, i64 %sig
+  store i64 %handler, ptr %handler_slot, align 8
+  store i64 %flags, ptr %flags_slot, align 8
   ret void
 }
 
@@ -836,37 +1348,37 @@ entry:
   ret void
 }
 
-define i64 @__mtrt_host_getpid() {
+define hidden i64 @__mtrt_host_getpid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 20)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getppid() {
+define hidden i64 @__mtrt_host_getppid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 39)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getuid() {
+define hidden i64 @__mtrt_host_getuid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 24)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_geteuid() {
+define hidden i64 @__mtrt_host_geteuid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 25)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getgid() {
+define hidden i64 @__mtrt_host_getgid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 47)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fork() {
+define hidden i64 @__mtrt_host_fork() {
 entry:
   %r = call i64 @__mtrt_darwin_fork()
   ret i64 %r
@@ -913,13 +1425,9 @@ preserve:
   ret i32 %status
 }
 
-define i64 @__mtrt_host_wait4(i64 %pid, ptr %status, i64 %options) {
+define hidden i64 @__mtrt_host_wait4(i64 %pid, ptr %status, i64 %options) {
 entry:
-  %continued_bits = and i64 %options, 8
-  %has_continued = icmp ne i64 %continued_bits, 0
-  %without_continued = and i64 %options, -9
-  %continued_native = select i1 %has_continued, i64 16, i64 0
-  %native_options = or i64 %without_continued, %continued_native
+  %native_options = call i64 @__mtrt_darwin_wait_options_from_target(i64 %options)
   %status_i = ptrtoint ptr %status to i64
   %r = call i64 @__mtrt_darwin_syscall4(i64 7, i64 %pid, i64 %status_i, i64 %native_options, i64 0)
   %waited = icmp sgt i64 %r, 0
@@ -937,43 +1445,50 @@ done:
   ret i64 %r
 }
 
-define void @__mtrt_host_exit(i64 %status) {
+define hidden void @__mtrt_host_exit(i64 %status) {
 entry:
   %_ = call i64 @__mtrt_darwin_syscall1(i64 1, i64 %status)
   unreachable
 }
 
-define i64 @__mtrt_host_write(i64 %fd, ptr %buf, i64 %count) {
+define hidden i64 @__mtrt_host_write(i64 %fd, ptr %buf, i64 %count) {
 entry:
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 4, i64 %fd, i64 %buf_i, i64 %count)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_read(i64 %fd, ptr %buf, i64 %count) {
+define hidden i64 @__mtrt_host_read(i64 %fd, ptr %buf, i64 %count) {
 entry:
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 3, i64 %fd, i64 %buf_i, i64 %count)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_close(i64 %fd) {
+define hidden i64 @__mtrt_host_close(i64 %fd) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem) {
+define hidden i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem) {
 entry:
+  %target_req = alloca [16 x i8], align 8
+  %target_rem = alloca [16 x i8], align 8
   %is_null = icmp eq ptr %req, null
-  br i1 %is_null, label %fault, label %check
+  br i1 %is_null, label %fault, label %copy_req
 
 fault:
   ret i64 -14
 
+copy_req:
+  %req_copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_req, ptr %req, i64 16)
+  %req_copy_ok = icmp eq i64 %req_copied, 0
+  br i1 %req_copy_ok, label %check, label %req_fault
+
 check:
-  %sec_p = getelementptr i8, ptr %req, i64 0
-  %nsec_p = getelementptr i8, ptr %req, i64 8
+  %sec_p = getelementptr i8, ptr %target_req, i64 0
+  %nsec_p = getelementptr i8, ptr %target_req, i64 8
   %sec = load i64, ptr %sec_p, align 8
   %nsec = load i64, ptr %nsec_p, align 8
   %sec_neg = icmp slt i64 %sec, 0
@@ -1057,18 +1572,27 @@ store_zero_rem:
 store_rem:
   %rem_sec = phi i64 [ 0, %store_same_sec_rem ], [ %sec_diff, %store_future_direct ], [ %sec_borrow, %store_future_borrow ], [ 0, %store_zero_rem ]
   %rem_nsec = phi i64 [ %nsec_left, %store_same_sec_rem ], [ %nsec_direct, %store_future_direct ], [ %nsec_borrow, %store_future_borrow ], [ 0, %store_zero_rem ]
-  %rem_sec_p = getelementptr i8, ptr %rem, i64 0
-  %rem_nsec_p = getelementptr i8, ptr %rem, i64 8
+  %rem_sec_p = getelementptr i8, ptr %target_rem, i64 0
+  %rem_nsec_p = getelementptr i8, ptr %target_rem, i64 8
   store i64 %rem_sec, ptr %rem_sec_p, align 8
   store i64 %rem_nsec, ptr %rem_nsec_p, align 8
-  br label %intr_done
+  %rem_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %rem, ptr %target_rem, i64 16)
+  %rem_copy_ok = icmp eq i64 %rem_copied, 0
+  br i1 %rem_copy_ok, label %intr_done, label %rem_fault
+
+req_fault:
+  ret i64 %req_copied
+
+rem_fault:
+  ret i64 %rem_copied
 
 intr_done:
   ret i64 -4
 }
 
-define i64 @__mtrt_host_clock_gettime(i64 %clockid, ptr %tp) {
+define hidden i64 @__mtrt_host_clock_gettime(i64 %clockid, ptr %tp) {
 entry:
+  %target_tp = alloca [16 x i8], align 8
   switch i64 %clockid, label %invalid [
     i64 0, label %check_realtime_ptr
     i64 1, label %check_monotonic_ptr
@@ -1102,11 +1626,12 @@ store_realtime:
   %usec32 = load i32, ptr %usec_p, align 4
   %usec = sext i32 %usec32 to i64
   %nsec = mul i64 %usec, 1000
-  %tp_sec_p = getelementptr i8, ptr %tp, i64 0
-  %tp_nsec_p = getelementptr i8, ptr %tp, i64 8
+  %tp_sec_p = getelementptr i8, ptr %target_tp, i64 0
+  %tp_nsec_p = getelementptr i8, ptr %target_tp, i64 8
   store i64 %sec, ptr %tp_sec_p, align 8
   store i64 %nsec, ptr %tp_nsec_p, align 8
-  ret i64 0
+  %realtime_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %tp, ptr %target_tp, i64 16)
+  ret i64 %realtime_copied
 
 done:
   ret i64 %r
@@ -1142,14 +1667,15 @@ store_monotonic:
   %ns = add i64 %ns_q, %ns_r
   %mono_sec = udiv i64 %ns, 1000000000
   %mono_nsec = urem i64 %ns, 1000000000
-  %mono_sec_p = getelementptr i8, ptr %tp, i64 0
-  %mono_nsec_p = getelementptr i8, ptr %tp, i64 8
+  %mono_sec_p = getelementptr i8, ptr %target_tp, i64 0
+  %mono_nsec_p = getelementptr i8, ptr %target_tp, i64 8
   store i64 %mono_sec, ptr %mono_sec_p, align 8
   store i64 %mono_nsec, ptr %mono_nsec_p, align 8
-  ret i64 0
+  %monotonic_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %tp, ptr %target_tp, i64 16)
+  ret i64 %monotonic_copied
 }
 
-define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
+define hidden i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
 entry:
   %native_sig = call i64 @__mtrt_darwin_signal_to_native(i64 %sig)
   %bad_sig = icmp slt i64 %native_sig, 0
@@ -1163,69 +1689,71 @@ call_kill:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_dup(i64 %oldfd) {
+define hidden i64 @__mtrt_host_dup(i64 %oldfd) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 41, i64 %oldfd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_dup2(i64 %oldfd, i64 %newfd) {
+define hidden i64 @__mtrt_host_dup2(i64 %oldfd, i64 %newfd) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 90, i64 %oldfd, i64 %newfd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_chdir(ptr %path) {
+define hidden i64 @__mtrt_host_chdir(ptr %path) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_darwin_syscall1(i64 12, i64 %path_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchdir(i64 %fd) {
+define hidden i64 @__mtrt_host_fchdir(i64 %fd) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 13, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getpgid(i64 %pid) {
+define hidden i64 @__mtrt_host_getpgid(i64 %pid) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 151, i64 %pid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getpgrp() {
+define hidden i64 @__mtrt_host_getpgrp() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 81)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getsid(i64 %pid) {
+define hidden i64 @__mtrt_host_getsid(i64 %pid) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 310, i64 %pid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_setpgid(i64 %pid, i64 %pgid) {
+define hidden i64 @__mtrt_host_setpgid(i64 %pid, i64 %pgid) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 82, i64 %pid, i64 %pgid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_setsid() {
+define hidden i64 @__mtrt_host_setsid() {
 entry:
   %r = call i64 @__mtrt_darwin_syscall0(i64 147)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_umask(i64 %mask) {
+define hidden i64 @__mtrt_host_umask(i64 %mask) {
 entry:
-  %r = call i64 @__mtrt_darwin_syscall1(i64 60, i64 %mask)
+  %native_mask = call i64 @__mtrt_darwin_mode_from_target(i64 %mask)
+  %r = call i64 @__mtrt_darwin_syscall1(i64 60, i64 %native_mask)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pipe(ptr %fds) {
+define hidden i64 @__mtrt_host_pipe(ptr %fds) {
 entry:
+  %native_fds = alloca [2 x i32], align 4
   %is_null = icmp eq ptr %fds, null
   br i1 %is_null, label %fault, label %call_pipe
 
@@ -1233,51 +1761,125 @@ fault:
   ret i64 -14
 
 call_pipe:
-  %r = call i64 @__mtrt_darwin_pipe(ptr %fds)
+  %r = call i64 @__mtrt_darwin_pipe(ptr %native_fds)
+  %failed = icmp slt i64 %r, 0
+  br i1 %failed, label %done, label %copy_fds
+
+copy_fds:
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %fds, ptr %native_fds, i64 8)
+  %copy_failed = icmp slt i64 %copied, 0
+  br i1 %copy_failed, label %close_after_fault, label %copy_done
+
+close_after_fault:
+  %read_fd32 = load i32, ptr %native_fds, align 4
+  %write_fd_p = getelementptr i8, ptr %native_fds, i64 4
+  %write_fd32 = load i32, ptr %write_fd_p, align 4
+  %read_fd = sext i32 %read_fd32 to i64
+  %write_fd = sext i32 %write_fd32 to i64
+  %close_read = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %read_fd)
+  %close_write = call i64 @__mtrt_darwin_syscall1(i64 6, i64 %write_fd)
+  ret i64 %copied
+
+copy_done:
+  ret i64 0
+
+done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_readv(i64 %fd, ptr %iov, i64 %iovcnt) {
+define internal i64 @__mtrt_darwin_iovec_from_target(ptr %target, i64 %count, ptr %native) {
 entry:
-  %iov_i = ptrtoint ptr %iov to i64
+  %target_entry = alloca [16 x i8], align 8
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %store_entry ]
+  %done = icmp uge i64 %i, %count
+  br i1 %done, label %return, label %copy
+
+copy:
+  %offset = mul i64 %i, 16
+  %target_base_p = getelementptr i8, ptr %target, i64 %offset
+  %copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_entry, ptr %target_base_p, i64 16)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %store_entry, label %fault
+
+store_entry:
+  %target_len_p = getelementptr i8, ptr %target_entry, i64 8
+  %base_i = load i64, ptr %target_entry, align 8
+  %len = load i64, ptr %target_len_p, align 8
+  %native_base_p = getelementptr i8, ptr %native, i64 %offset
+  %native_len_p = getelementptr i8, ptr %native_base_p, i64 8
+  %base = inttoptr i64 %base_i to ptr
+  store ptr %base, ptr %native_base_p, align 8
+  store i64 %len, ptr %native_len_p, align 8
+  %next = add i64 %i, 1
+  br label %loop
+
+return:
+  ret i64 0
+
+fault:
+  ret i64 %copied
+}
+
+define hidden i64 @__mtrt_host_readv(i64 %fd, ptr %iov, i64 %iovcnt) {
+entry:
+  %native_iov = alloca [16 x i8], i64 %iovcnt, align 8
+  %copied = call i64 @__mtrt_darwin_iovec_from_target(ptr %iov, i64 %iovcnt, ptr %native_iov)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %call_readv, label %fault
+
+call_readv:
+  %iov_i = ptrtoint ptr %native_iov to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 120, i64 %fd, i64 %iov_i, i64 %iovcnt)
   ret i64 %r
+
+fault:
+  ret i64 %copied
 }
 
-define i64 @__mtrt_host_writev(i64 %fd, ptr %iov, i64 %iovcnt) {
+define hidden i64 @__mtrt_host_writev(i64 %fd, ptr %iov, i64 %iovcnt) {
 entry:
-  %iov_i = ptrtoint ptr %iov to i64
+  %native_iov = alloca [16 x i8], i64 %iovcnt, align 8
+  %copied = call i64 @__mtrt_darwin_iovec_from_target(ptr %iov, i64 %iovcnt, ptr %native_iov)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %call_writev, label %fault
+
+call_writev:
+  %iov_i = ptrtoint ptr %native_iov to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 121, i64 %fd, i64 %iov_i, i64 %iovcnt)
   ret i64 %r
+
+fault:
+  ret i64 %copied
 }
 
-define i64 @__mtrt_host_open(ptr %path, i64 %flags, i64 %mode) {
+define hidden i64 @__mtrt_host_open(ptr %path, i64 %flags, i64 %mode) {
 entry:
   %flags32 = trunc i64 %flags to i32
-  %mode32 = trunc i64 %mode to i32
+  %mapped_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
   %mapped_flags = call i32 @__mtrt_darwin_open_flags_from_target(i32 %flags32)
   %path_i = ptrtoint ptr %path to i64
   %flags64 = sext i32 %mapped_flags to i64
-  %mode64 = sext i32 %mode32 to i64
-  %r = call i64 @__mtrt_darwin_syscall3(i64 5, i64 %path_i, i64 %flags64, i64 %mode64)
+  %r = call i64 @__mtrt_darwin_syscall3(i64 5, i64 %path_i, i64 %flags64, i64 %mapped_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
+define hidden i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %flags32 = trunc i64 %flags to i32
-  %mode32 = trunc i64 %mode to i32
+  %mapped_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
   %mapped_flags = call i32 @__mtrt_darwin_open_flags_from_target(i32 %flags32)
   %dirfd64 = sext i32 %dirfd32 to i64
   %path_i = ptrtoint ptr %path to i64
   %flags64 = sext i32 %mapped_flags to i64
-  %mode64 = sext i32 %mode32 to i64
-  %r = call i64 @__mtrt_darwin_syscall4(i64 463, i64 %dirfd64, i64 %path_i, i64 %flags64, i64 %mode64)
+  %r = call i64 @__mtrt_darwin_syscall4(i64 463, i64 %dirfd64, i64 %path_i, i64 %flags64, i64 %mapped_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_posix_getdents(i64 %fd, ptr %buf, i64 %nbyte, i64 %flags) {
+define hidden i64 @__mtrt_host_posix_getdents(i64 %fd, ptr %buf, i64 %nbyte, i64 %flags) {
 entry:
   %flags_ok = icmp eq i64 %flags, 0
   br i1 %flags_ok, label %check_size, label %invalid
@@ -1306,36 +1908,35 @@ invalid:
   ret i64 -22
 }
 
-define i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
+define hidden i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
 entry:
-  %whence32 = trunc i64 %whence to i32
-  %whence64 = sext i32 %whence32 to i64
-  %r = call i64 @__mtrt_darwin_syscall3(i64 199, i64 %fd, i64 %offset, i64 %whence64)
+  %native_whence = call i64 @__mtrt_darwin_lseek_from_target(i64 %whence)
+  %r = call i64 @__mtrt_darwin_syscall3(i64 199, i64 %fd, i64 %offset, i64 %native_whence)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+define hidden i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
 entry:
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_darwin_syscall4(i64 153, i64 %fd, i64 %buf_i, i64 %count, i64 %offset)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pwrite(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+define hidden i64 @__mtrt_host_pwrite(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
 entry:
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_darwin_syscall4(i64 154, i64 %fd, i64 %buf_i, i64 %count, i64 %offset)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_unlink(ptr %path) {
+define hidden i64 @__mtrt_host_unlink(ptr %path) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_darwin_syscall1(i64 10, i64 %path_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
+define hidden i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %flags32 = call i32 @__mtrt_darwin_unlinkat_flags_from_target(i64 %flags)
@@ -1353,14 +1954,15 @@ call_unlinkat:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_access(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_access(ptr %path, i64 %mode) {
 entry:
+  %native_mode = call i64 @__mtrt_darwin_access_mode_from_target(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_darwin_syscall2(i64 33, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_darwin_syscall2(i64 33, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_faccessat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+define hidden i64 @__mtrt_host_faccessat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %flags32 = call i32 @__mtrt_darwin_faccessat_flags_from_target(i64 %flags)
@@ -1371,27 +1973,30 @@ invalid:
   ret i64 -22
 
 call_faccessat:
+  %native_mode = call i64 @__mtrt_darwin_access_mode_from_target(i64 %mode)
   %dirfd64 = sext i32 %dirfd32 to i64
   %path_i = ptrtoint ptr %path to i64
   %flags64 = sext i32 %flags32 to i64
-  %r = call i64 @__mtrt_darwin_syscall4(i64 466, i64 %dirfd64, i64 %path_i, i64 %mode, i64 %flags64)
+  %r = call i64 @__mtrt_darwin_syscall4(i64 466, i64 %dirfd64, i64 %path_i, i64 %native_mode, i64 %flags64)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_chmod(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_chmod(ptr %path, i64 %mode) {
 entry:
+  %native_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_darwin_syscall2(i64 15, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_darwin_syscall2(i64 15, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchmod(i64 %fd, i64 %mode) {
+define hidden i64 @__mtrt_host_fchmod(i64 %fd, i64 %mode) {
 entry:
-  %r = call i64 @__mtrt_darwin_syscall2(i64 124, i64 %fd, i64 %mode)
+  %native_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
+  %r = call i64 @__mtrt_darwin_syscall2(i64 124, i64 %fd, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+define hidden i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %flags_ok = call i1 @__mtrt_darwin_at_flags_supported(i64 %flags)
@@ -1401,15 +2006,16 @@ invalid:
   ret i64 -22
 
 call_fchmodat:
+  %native_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
   %flags32 = call i32 @__mtrt_darwin_at_flags_from_target(i64 %flags)
   %dirfd64 = sext i32 %dirfd32 to i64
   %path_i = ptrtoint ptr %path to i64
   %flags64 = sext i32 %flags32 to i64
-  %r = call i64 @__mtrt_darwin_syscall4(i64 467, i64 %dirfd64, i64 %path_i, i64 %mode, i64 %flags64)
+  %r = call i64 @__mtrt_darwin_syscall4(i64 467, i64 %dirfd64, i64 %path_i, i64 %native_mode, i64 %flags64)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
+define hidden i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
 entry:
   %oldpath_i = ptrtoint ptr %oldpath to i64
   %newpath_i = ptrtoint ptr %newpath to i64
@@ -1417,7 +2023,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_linkat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath, i64 %flags) {
+define hidden i64 @__mtrt_host_linkat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath, i64 %flags) {
 entry:
   %olddirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %olddirfd)
   %newdirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %newdirfd)
@@ -1438,31 +2044,33 @@ call_linkat:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mkdir(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_mkdir(ptr %path, i64 %mode) {
 entry:
+  %native_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_darwin_syscall2(i64 136, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_darwin_syscall2(i64 136, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode) {
 entry:
   %path_i = ptrtoint ptr %path to i64
-  %mode_masked = and i64 %mode, 511
-  %r = call i64 @__mtrt_darwin_syscall2(i64 132, i64 %path_i, i64 %mode_masked)
+  %native_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
+  %r = call i64 @__mtrt_darwin_syscall2(i64 132, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
 entry:
+  %native_mode = call i64 @__mtrt_darwin_mode_from_target(i64 %mode)
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %dirfd64 = sext i32 %dirfd32 to i64
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_darwin_syscall3(i64 475, i64 %dirfd64, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_darwin_syscall3(i64 475, i64 %dirfd64, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
+define hidden i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %buf_i = ptrtoint ptr %buf to i64
@@ -1470,7 +2078,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_readlinkat(i64 %dirfd, ptr %path, ptr %buf, i64 %size) {
+define hidden i64 @__mtrt_host_readlinkat(i64 %dirfd, ptr %path, ptr %buf, i64 %size) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %dirfd64 = sext i32 %dirfd32 to i64
@@ -1480,7 +2088,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath) {
+define hidden i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath) {
 entry:
   %oldpath_i = ptrtoint ptr %oldpath to i64
   %newpath_i = ptrtoint ptr %newpath to i64
@@ -1488,7 +2096,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_renameat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath) {
+define hidden i64 @__mtrt_host_renameat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath) {
 entry:
   %olddirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %olddirfd)
   %newdirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %newdirfd)
@@ -1500,14 +2108,14 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_rmdir(ptr %path) {
+define hidden i64 @__mtrt_host_rmdir(ptr %path) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_darwin_syscall1(i64 137, i64 %path_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath) {
+define hidden i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath) {
 entry:
   %target_i = ptrtoint ptr %target to i64
   %linkpath_i = ptrtoint ptr %linkpath to i64
@@ -1515,7 +2123,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
+define hidden i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
 entry:
   %newdirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %newdirfd)
   %newdirfd64 = sext i32 %newdirfd32 to i64
@@ -1525,7 +2133,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_stat(ptr %path, ptr %buf) {
+define hidden i64 @__mtrt_host_stat(ptr %path, ptr %buf) {
 entry:
   %is_null = icmp eq ptr %buf, null
   br i1 %is_null, label %fault, label %call_stat
@@ -1535,6 +2143,7 @@ fault:
 
 call_stat:
   %native = alloca [144 x i8], align 8
+  %target_stat = alloca [120 x i8], align 8
   %path_i = ptrtoint ptr %path to i64
   %native_i = ptrtoint ptr %native to i64
   %r = call i64 @__mtrt_darwin_syscall2(i64 338, i64 %path_i, i64 %native_i)
@@ -1542,14 +2151,15 @@ call_stat:
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
-  ret i64 0
+  call void @__mtrt_darwin_store_stat64(ptr %target_stat, ptr %native)
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %buf, ptr %target_stat, i64 120)
+  ret i64 %copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fstat(i64 %fd, ptr %buf) {
+define hidden i64 @__mtrt_host_fstat(i64 %fd, ptr %buf) {
 entry:
   %is_null = icmp eq ptr %buf, null
   br i1 %is_null, label %fault, label %call_fstat
@@ -1559,20 +2169,22 @@ fault:
 
 call_fstat:
   %native = alloca [144 x i8], align 8
+  %target_stat = alloca [120 x i8], align 8
   %native_i = ptrtoint ptr %native to i64
   %r = call i64 @__mtrt_darwin_syscall2(i64 339, i64 %fd, i64 %native_i)
   %ok = icmp eq i64 %r, 0
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
-  ret i64 0
+  call void @__mtrt_darwin_store_stat64(ptr %target_stat, ptr %native)
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %buf, ptr %target_stat, i64 120)
+  ret i64 %copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
+define hidden i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
 entry:
   %is_null = icmp eq ptr %buf, null
   br i1 %is_null, label %fault, label %call_lstat
@@ -1582,6 +2194,7 @@ fault:
 
 call_lstat:
   %native = alloca [144 x i8], align 8
+  %target_stat = alloca [120 x i8], align 8
   %path_i = ptrtoint ptr %path to i64
   %native_i = ptrtoint ptr %native to i64
   %r = call i64 @__mtrt_darwin_syscall2(i64 340, i64 %path_i, i64 %native_i)
@@ -1589,14 +2202,15 @@ call_lstat:
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
-  ret i64 0
+  call void @__mtrt_darwin_store_stat64(ptr %target_stat, ptr %native)
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %buf, ptr %target_stat, i64 120)
+  ret i64 %copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
+define hidden i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
 entry:
   %is_null = icmp eq ptr %buf, null
   br i1 %is_null, label %fault, label %check_flags
@@ -1615,6 +2229,7 @@ call_fstatat:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %flags32 = call i32 @__mtrt_darwin_at_flags_from_target(i64 %flags)
   %native = alloca [144 x i8], align 8
+  %target_stat = alloca [120 x i8], align 8
   %dirfd64 = sext i32 %dirfd32 to i64
   %path_i = ptrtoint ptr %path to i64
   %native_i = ptrtoint ptr %native to i64
@@ -1624,20 +2239,21 @@ call_fstatat:
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_darwin_store_stat64(ptr %buf, ptr %native)
-  ret i64 0
+  call void @__mtrt_darwin_store_stat64(ptr %target_stat, ptr %native)
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %buf, ptr %target_stat, i64 120)
+  ret i64 %copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_ftruncate(i64 %fd, i64 %length) {
+define hidden i64 @__mtrt_host_ftruncate(i64 %fd, i64 %length) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 201, i64 %fd, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
+define hidden i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 16, i64 %path_i, i64 %uid, i64 %gid)
@@ -2406,7 +3022,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_host_tcgetattr(i64 %fd, ptr %termios) {
+define hidden i64 @__mtrt_host_tcgetattr(i64 %fd, ptr %termios) {
 entry:
   %is_null = icmp eq ptr %termios, null
   br i1 %is_null, label %fault, label %call_get
@@ -2416,19 +3032,21 @@ fault:
 
 call_get:
   %native = alloca [72 x i8], align 8
+  %target_termios = alloca [72 x i8], align 8
   %r = call i64 @__mtrt_darwin_ioctl_ptr(i64 %fd, i64 1078490131, ptr %native)
   %ok = icmp eq i64 %r, 0
   br i1 %ok, label %store, label %done
 
 store:
-  call void @__mtrt_darwin_store_target_termios(ptr %termios, ptr %native)
-  ret i64 0
+  call void @__mtrt_darwin_store_target_termios(ptr %target_termios, ptr %native)
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %termios, ptr %target_termios, i64 72)
+  ret i64 %copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_isatty(i64 %fd) {
+define hidden i64 @__mtrt_host_isatty(i64 %fd) {
 entry:
   %native = alloca [72 x i8], align 8
   %r = call i64 @__mtrt_darwin_ioctl_ptr(i64 %fd, i64 1078490131, ptr %native)
@@ -2453,8 +3071,9 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
+define hidden i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
 entry:
+  %target_termios = alloca [72 x i8], align 8
   %is_null = icmp eq ptr %termios, null
   br i1 %is_null, label %fault, label %map_action
 
@@ -2464,13 +3083,18 @@ fault:
 map_action:
   %request = call i64 @__mtrt_darwin_tcsetattr_request(i64 %action)
   %bad_action = icmp eq i64 %request, -1
-  br i1 %bad_action, label %invalid, label %validate
+  br i1 %bad_action, label %invalid, label %copy_target
+
+copy_target:
+  %copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_termios, ptr %termios, i64 72)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %validate, label %copy_fault
 
 invalid:
   ret i64 -22
 
 validate:
-  %valid = call i1 @__mtrt_darwin_termios_target_valid(ptr %termios)
+  %valid = call i1 @__mtrt_darwin_termios_target_valid(ptr %target_termios)
   br i1 %valid, label %read_native, label %invalid
 
 read_native:
@@ -2480,15 +3104,18 @@ read_native:
   br i1 %get_ok, label %overlay, label %done
 
 overlay:
-  call void @__mtrt_darwin_overlay_native_termios(ptr %native, ptr %termios)
+  call void @__mtrt_darwin_overlay_native_termios(ptr %native, ptr %target_termios)
   %set = call i64 @__mtrt_darwin_ioctl_ptr(i64 %fd, i64 %request, ptr %native)
   ret i64 %set
+
+copy_fault:
+  ret i64 %copied
 
 done:
   ret i64 %get
 }
 
-define i64 @__mtrt_host_tcdrain(i64 %fd) {
+define hidden i64 @__mtrt_host_tcdrain(i64 %fd) {
 entry:
   %r = call i64 @__mtrt_darwin_ioctl_int(i64 %fd, i64 536900702, i64 0)
   ret i64 %r
@@ -2519,7 +3146,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_host_tcflow(i64 %fd, i64 %action) {
+define hidden i64 @__mtrt_host_tcflow(i64 %fd, i64 %action) {
 entry:
   %request = call i64 @__mtrt_darwin_tcflow_request(i64 %action)
   %bad = icmp eq i64 %request, -1
@@ -2554,7 +3181,7 @@ bad:
   ret i64 -1
 }
 
-define i64 @__mtrt_host_tcflush(i64 %fd, i64 %selector) {
+define hidden i64 @__mtrt_host_tcflush(i64 %fd, i64 %selector) {
 entry:
   %native = call i64 @__mtrt_darwin_tcflush_selector(i64 %selector)
   %bad = icmp eq i64 %native, -1
@@ -2571,7 +3198,7 @@ call_ioctl:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_tcsendbreak(i64 %fd, i64 %duration) {
+define hidden i64 @__mtrt_host_tcsendbreak(i64 %fd, i64 %duration) {
 entry:
   %set = call i64 @__mtrt_darwin_ioctl_int(i64 %fd, i64 536900731, i64 0)
   %ok = icmp eq i64 %set, 0
@@ -2585,7 +3212,7 @@ done:
   ret i64 %set
 }
 
-define i64 @__mtrt_host_tcgetpgrp(i64 %fd) {
+define hidden i64 @__mtrt_host_tcgetpgrp(i64 %fd) {
 entry:
   %pgrp = alloca i32, align 4
   %r = call i64 @__mtrt_darwin_ioctl_ptr(i64 %fd, i64 1074033783, ptr %pgrp)
@@ -2601,7 +3228,7 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_tcsetpgrp(i64 %fd, i64 %pgrp) {
+define hidden i64 @__mtrt_host_tcsetpgrp(i64 %fd, i64 %pgrp) {
 entry:
   %slot = alloca i32, align 4
   %pgrp32 = trunc i64 %pgrp to i32
@@ -2610,8 +3237,9 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
+define hidden i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
 entry:
+  %target_tp = alloca [16 x i8], align 8
   switch i64 %clockid, label %invalid [
     i64 0, label %realtime
     i64 1, label %monotonic
@@ -2625,11 +3253,12 @@ realtime:
   br i1 %realtime_null, label %done, label %store_realtime
 
 store_realtime:
-  %realtime_sec_p = getelementptr i8, ptr %tp, i64 0
-  %realtime_nsec_p = getelementptr i8, ptr %tp, i64 8
+  %realtime_sec_p = getelementptr i8, ptr %target_tp, i64 0
+  %realtime_nsec_p = getelementptr i8, ptr %target_tp, i64 8
   store i64 0, ptr %realtime_sec_p, align 8
   store i64 1000, ptr %realtime_nsec_p, align 8
-  ret i64 0
+  %realtime_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %tp, ptr %target_tp, i64 16)
+  ret i64 %realtime_copied
 
 monotonic:
   %monotonic_null = icmp eq ptr %tp, null
@@ -2662,22 +3291,23 @@ store_monotonic_res:
   %res_ns = udiv i64 %ceil_numer, %denom
   %res_sec = udiv i64 %res_ns, 1000000000
   %res_nsec = urem i64 %res_ns, 1000000000
-  %monotonic_sec_p = getelementptr i8, ptr %tp, i64 0
-  %monotonic_nsec_p = getelementptr i8, ptr %tp, i64 8
+  %monotonic_sec_p = getelementptr i8, ptr %target_tp, i64 0
+  %monotonic_nsec_p = getelementptr i8, ptr %target_tp, i64 8
   store i64 %res_sec, ptr %monotonic_sec_p, align 8
   store i64 %res_nsec, ptr %monotonic_nsec_p, align 8
-  ret i64 0
+  %monotonic_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %tp, ptr %target_tp, i64 16)
+  ret i64 %monotonic_copied
 
 done:
   ret i64 0
 }
 
-define i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
+define hidden i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
 entry:
   ret i64 -38
 }
 
-define i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
+define hidden i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %argv_i = ptrtoint ptr %argv to i64
@@ -2686,13 +3316,13 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchown(i64 %fd, i64 %uid, i64 %gid) {
+define hidden i64 @__mtrt_host_fchown(i64 %fd, i64 %uid, i64 %gid) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall3(i64 123, i64 %fd, i64 %uid, i64 %gid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 %flags) {
+define hidden i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 %flags) {
 entry:
   %dirfd32 = call i32 @__mtrt_darwin_dirfd_from_target(i64 %dirfd)
   %flags_ok = call i1 @__mtrt_darwin_at_flags_supported(i64 %flags)
@@ -2919,7 +3549,7 @@ invalid:
   ret i64 -22
 }
 
-define i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
+define hidden i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
 entry:
   %native_cmd = call i64 @__mtrt_darwin_fcntl_cmd_from_target(i64 %cmd)
   switch i64 %cmd, label %scalar [
@@ -2976,8 +3606,14 @@ lock:
   br i1 %lock_null, label %fault, label %copy_lock_in
 
 copy_lock_in:
+  %target_flock_scratch = alloca [32 x i8], align 8
   %native_flock = alloca [24 x i8], align 8
-  %prep = call i64 @__mtrt_darwin_flock_target_to_native(ptr %target_flock, ptr %native_flock)
+  %input_copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_flock_scratch, ptr %target_flock, i64 32)
+  %input_copy_bad = icmp slt i64 %input_copied, 0
+  br i1 %input_copy_bad, label %input_copy_done, label %prepare_lock
+
+prepare_lock:
+  %prep = call i64 @__mtrt_darwin_flock_target_to_native(ptr %target_flock_scratch, ptr %native_flock)
   %prep_bad = icmp slt i64 %prep, 0
   br i1 %prep_bad, label %prep_done, label %call_lock
 
@@ -2990,8 +3626,16 @@ call_lock:
   br i1 %copy_out, label %copy_lock_out, label %lock_done
 
 copy_lock_out:
-  %copy = call i64 @__mtrt_darwin_flock_native_to_target(ptr %target_flock, ptr %native_flock)
+  %translated = call i64 @__mtrt_darwin_flock_native_to_target(ptr %target_flock_scratch, ptr %native_flock)
+  %translate_bad = icmp slt i64 %translated, 0
+  br i1 %translate_bad, label %translate_done, label %copy_target_lock
+
+copy_target_lock:
+  %copy = call i64 @__mtrt_darwin_copy_to_target(ptr %target_flock, ptr %target_flock_scratch, i64 32)
   ret i64 %copy
+
+translate_done:
+  ret i64 %translated
 
 lock_done:
   ret i64 %lock_r
@@ -2999,23 +3643,26 @@ lock_done:
 prep_done:
   ret i64 %prep
 
+input_copy_done:
+  ret i64 %input_copied
+
 fault:
   ret i64 -14
 }
 
-define i64 @__mtrt_host_fdatasync(i64 %fd) {
+define hidden i64 @__mtrt_host_fdatasync(i64 %fd) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 187, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fsync(i64 %fd) {
+define hidden i64 @__mtrt_host_fsync(i64 %fd) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall1(i64 95, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getcwd(ptr %buf, i64 %size) {
+define hidden i64 @__mtrt_host_getcwd(ptr %buf, i64 %size) {
 entry:
   %is_null = icmp eq ptr %buf, null
   br i1 %is_null, label %fault, label %check_size
@@ -3055,9 +3702,16 @@ range:
   ret i64 -34
 
 copy:
-  call void @__mtrt_copy_cstr(ptr %buf, ptr %tmp_p, i64 %len)
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %buf, ptr %tmp_p, i64 %need)
+  %copy_bad = icmp slt i64 %copied, 0
+  br i1 %copy_bad, label %copy_done, label %copy_ok
+
+copy_ok:
   %ret = ptrtoint ptr %buf to i64
   ret i64 %ret
+
+copy_done:
+  ret i64 %copied
 
 fcntl_done:
   ret i64 %fr
@@ -3066,49 +3720,46 @@ open_done:
   ret i64 %fd
 }
 
-define i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
+define hidden i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
 entry:
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_darwin_syscall3(i64 364, i64 %path_i, i64 %uid, i64 %gid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
+define hidden i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
 entry:
-  %advice32 = trunc i64 %advice to i32
-  %advice64 = sext i32 %advice32 to i64
-  %r = call i64 @__mtrt_darwin_syscall3(i64 75, i64 %addr, i64 %length, i64 %advice64)
+  %native_advice = call i64 @__mtrt_darwin_madvise_from_target(i64 %advice)
+  %r = call i64 @__mtrt_darwin_syscall3(i64 75, i64 %addr, i64 %length, i64 %native_advice)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
+define hidden i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 203, i64 %addr, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
+define hidden i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
 entry:
-  %prot32 = trunc i64 %prot to i32
+  %native_prot = call i64 @__mtrt_darwin_prot_from_target(i64 %prot)
   %flags32 = trunc i64 %flags to i32
   %fd32 = trunc i64 %fd to i32
   %mapped_flags = call i32 @__mtrt_darwin_mmap_flags_from_target(i32 %flags32)
-  %prot64 = sext i32 %prot32 to i64
   %flags64 = sext i32 %mapped_flags to i64
   %fd64 = sext i32 %fd32 to i64
-  %r = call i64 @__mtrt_darwin_syscall6(i64 197, i64 %addr, i64 %length, i64 %prot64, i64 %flags64, i64 %fd64, i64 %offset)
+  %r = call i64 @__mtrt_darwin_syscall6(i64 197, i64 %addr, i64 %length, i64 %native_prot, i64 %flags64, i64 %fd64, i64 %offset)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
+define hidden i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
 entry:
-  %prot32 = trunc i64 %prot to i32
-  %prot64 = sext i32 %prot32 to i64
-  %r = call i64 @__mtrt_darwin_syscall3(i64 74, i64 %addr, i64 %length, i64 %prot64)
+  %native_prot = call i64 @__mtrt_darwin_prot_from_target(i64 %prot)
+  %r = call i64 @__mtrt_darwin_syscall3(i64 74, i64 %addr, i64 %length, i64 %native_prot)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
+define hidden i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
 entry:
   %flags32 = trunc i64 %flags to i32
   %mapped_flags = call i32 @__mtrt_darwin_msync_flags_from_target(i32 %flags32)
@@ -3117,19 +3768,19 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
+define hidden i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 204, i64 %addr, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
+define hidden i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
 entry:
   %r = call i64 @__mtrt_darwin_syscall2(i64 73, i64 %addr, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pause() {
+define hidden i64 @__mtrt_host_pause() {
 entry:
   %old = alloca i32, align 4
   %target_old = alloca i64, align 8
@@ -3153,19 +3804,21 @@ done:
   ret i64 %get_mask
 }
 
-define i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
+define hidden i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
 entry:
   ret i64 -38
 }
 
-define i64 @__mtrt_host_sched_yield() {
+define hidden i64 @__mtrt_host_sched_yield() {
 entry:
   %r = call i64 @__mtrt_darwin_swtch_trap()
   ret i64 0
 }
 
-define i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
+define hidden i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
 entry:
+  %target_act = alloca [24 x i8], align 8
+  %target_oldact = alloca [24 x i8], align 8
   %native_act = alloca [16 x i8], align 8
   %native_oldact = alloca [16 x i8], align 8
   %native_sig = call i64 @__mtrt_darwin_signal_to_native(i64 %sig)
@@ -3176,10 +3829,15 @@ check_act:
   %current_handler = call i64 @__mtrt_darwin_load_target_handler(i64 %sig)
   %current_flags = call i64 @__mtrt_darwin_load_target_flags(i64 %sig)
   %act_is_null = icmp eq ptr %act, null
-  br i1 %act_is_null, label %prep_oldact, label %copy_act
+  br i1 %act_is_null, label %prep_oldact, label %copy_target_act
+
+copy_target_act:
+  %act_copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_act, ptr %act, i64 24)
+  %act_copy_ok = icmp eq i64 %act_copied, 0
+  br i1 %act_copy_ok, label %copy_act, label %copy_fault
 
 copy_act:
-  %target_handler_i = load i64, ptr %act, align 8
+  %target_handler_i = load i64, ptr %target_act, align 8
   %dispatcher_i = call i64 @__mtrt_darwin_sigaction_dispatcher(i64 %sig)
   %is_remapped = icmp ne i64 %dispatcher_i, 0
   %is_dfl = icmp eq i64 %target_handler_i, 0
@@ -3189,7 +3847,7 @@ copy_act:
   %use_target_dispatcher = xor i1 %use_dispatcher, %is_remapped
   %native_handler_i = select i1 %use_target_dispatcher, i64 %dispatcher_i, i64 %target_handler_i
   store i64 %native_handler_i, ptr %native_act, align 8
-  %target_mask_p = getelementptr i8, ptr %act, i64 16
+  %target_mask_p = getelementptr i8, ptr %target_act, i64 16
   %target_mask = load i64, ptr %target_mask_p, align 8
   %native_mask = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_mask)
   %bad_mask = icmp slt i64 %native_mask, 0
@@ -3199,7 +3857,7 @@ copy_flags:
   %native_mask32 = trunc i64 %native_mask to i32
   %native_mask_p = getelementptr i8, ptr %native_act, i64 8
   store i32 %native_mask32, ptr %native_mask_p, align 4
-  %target_flags_p = getelementptr i8, ptr %act, i64 8
+  %target_flags_p = getelementptr i8, ptr %target_act, i64 8
   %target_flags = load i64, ptr %target_flags_p, align 8
   %native_flags = call i64 @__mtrt_darwin_sigaction_flags_to_native(i64 %target_flags)
   %bad_flags = icmp slt i64 %native_flags, 0
@@ -3250,20 +3908,24 @@ maybe_store_oldact:
 store_oldact:
   %old_handler = load i64, ptr %native_oldact, align 8
   %old_target_handler = call i64 @__mtrt_darwin_sigaction_handler_from_native(i64 %sig, i64 %old_handler, i64 %previous_handler_phi)
-  store i64 %old_target_handler, ptr %oldact, align 8
+  store i64 %old_target_handler, ptr %target_oldact, align 8
   %old_native_flags_p = getelementptr i8, ptr %native_oldact, i64 12
   %old_native_flags32 = load i32, ptr %old_native_flags_p, align 4
   %old_native_flags = zext i32 %old_native_flags32 to i64
   %old_target_flags = call i64 @__mtrt_darwin_sigaction_flags_from_native(i64 %old_native_flags)
-  %old_target_flags_p = getelementptr i8, ptr %oldact, i64 8
+  %old_target_flags_p = getelementptr i8, ptr %target_oldact, i64 8
   store i64 %old_target_flags, ptr %old_target_flags_p, align 8
   %old_native_mask_p = getelementptr i8, ptr %native_oldact, i64 8
   %old_native_mask32 = load i32, ptr %old_native_mask_p, align 4
   %old_native_mask = zext i32 %old_native_mask32 to i64
   %old_target_mask = call i64 @__mtrt_darwin_sigset_from_native(i64 %old_native_mask)
-  %old_target_mask_p = getelementptr i8, ptr %oldact, i64 16
+  %old_target_mask_p = getelementptr i8, ptr %target_oldact, i64 16
   store i64 %old_target_mask, ptr %old_target_mask_p, align 8
-  ret i64 %r
+  %oldact_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %oldact, ptr %target_oldact, i64 24)
+  ret i64 %oldact_copied
+
+copy_fault:
+  ret i64 %act_copied
 
 invalid:
   ret i64 -22
@@ -3272,15 +3934,84 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
+define hidden i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
 entry:
-  %ss_i = ptrtoint ptr %ss to i64
-  %old_i = ptrtoint ptr %old_ss to i64
+  %target_ss = alloca [24 x i8], align 8
+  %target_old = alloca [24 x i8], align 8
+  %native_ss = alloca [24 x i8], align 8
+  %native_old = alloca [24 x i8], align 8
+  %ss_null = icmp eq ptr %ss, null
+  br i1 %ss_null, label %prepare_old, label %copy_ss
+
+copy_ss:
+  %ss_copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_ss, ptr %ss, i64 24)
+  %ss_copy_ok = icmp eq i64 %ss_copied, 0
+  br i1 %ss_copy_ok, label %translate_ss, label %ss_fault
+
+translate_ss:
+  %sp_i = load i64, ptr %target_ss, align 8
+  %size_p = getelementptr i8, ptr %target_ss, i64 8
+  %size = load i64, ptr %size_p, align 8
+  %flags_p = getelementptr i8, ptr %target_ss, i64 16
+  %flags = load i32, ptr %flags_p, align 4
+  %flags_zero = icmp eq i32 %flags, 0
+  %flags_disable = icmp eq i32 %flags, 2
+  %flags_ok = or i1 %flags_zero, %flags_disable
+  br i1 %flags_ok, label %store_ss, label %invalid
+
+store_ss:
+  %sp = inttoptr i64 %sp_i to ptr
+  %native_flags = select i1 %flags_disable, i32 4, i32 0
+  store ptr %sp, ptr %native_ss, align 8
+  %native_size_p = getelementptr i8, ptr %native_ss, i64 8
+  store i64 %size, ptr %native_size_p, align 8
+  %native_flags_p = getelementptr i8, ptr %native_ss, i64 16
+  store i32 %native_flags, ptr %native_flags_p, align 4
+  br label %prepare_old
+
+prepare_old:
+  %native_ss_arg = phi ptr [ null, %entry ], [ %native_ss, %store_ss ]
+  %old_null = icmp eq ptr %old_ss, null
+  %native_old_arg = select i1 %old_null, ptr null, ptr %native_old
+  %ss_i = ptrtoint ptr %native_ss_arg to i64
+  %old_i = ptrtoint ptr %native_old_arg to i64
   %r = call i64 @__mtrt_darwin_syscall2(i64 53, i64 %ss_i, i64 %old_i)
+  %failed = icmp slt i64 %r, 0
+  %skip_old = or i1 %failed, %old_null
+  br i1 %skip_old, label %done, label %translate_old
+
+translate_old:
+  %old_sp = load i64, ptr %native_old, align 8
+  %old_native_size_p = getelementptr i8, ptr %native_old, i64 8
+  %old_size = load i64, ptr %old_native_size_p, align 8
+  %old_native_flags_p = getelementptr i8, ptr %native_old, i64 16
+  %old_native_flags = load i32, ptr %old_native_flags_p, align 4
+  %old_onstack_bits = and i32 %old_native_flags, 1
+  %old_disable_bits = and i32 %old_native_flags, 4
+  %old_disabled = icmp ne i32 %old_disable_bits, 0
+  %old_disable_target = select i1 %old_disabled, i32 2, i32 0
+  %old_flags = or i32 %old_onstack_bits, %old_disable_target
+  store i64 %old_sp, ptr %target_old, align 8
+  %old_size_p = getelementptr i8, ptr %target_old, i64 8
+  store i64 %old_size, ptr %old_size_p, align 8
+  %old_flags_p = getelementptr i8, ptr %target_old, i64 16
+  store i32 %old_flags, ptr %old_flags_p, align 4
+  %old_reserved_p = getelementptr i8, ptr %target_old, i64 20
+  store i32 0, ptr %old_reserved_p, align 4
+  %old_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %old_ss, ptr %target_old, i64 24)
+  ret i64 %old_copied
+
+ss_fault:
+  ret i64 %ss_copied
+
+invalid:
+  ret i64 -22
+
+done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigpending(ptr %sigset) {
+define hidden i64 @__mtrt_host_sigpending(ptr %sigset) {
 entry:
   %darwin_sigset = alloca i32, align 4
   %is_null = icmp eq ptr %sigset, null
@@ -3299,14 +4030,16 @@ store_sigset:
   %darwin_value = load i32, ptr %darwin_sigset, align 4
   %darwin_value64 = zext i32 %darwin_value to i64
   %target_value = call i64 @__mtrt_darwin_sigset_from_native(i64 %darwin_value64)
-  store i64 %target_value, ptr %sigset, align 8
-  ret i64 %r
+  %target_value_p = alloca i64, align 8
+  store i64 %target_value, ptr %target_value_p, align 8
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %sigset, ptr %target_value_p, i64 8)
+  ret i64 %copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
+define hidden i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
 entry:
   %darwin_set = alloca i32, align 4
   %darwin_oldset = alloca i32, align 4
@@ -3322,7 +4055,13 @@ call_sigprocmask:
   br i1 %set_is_null, label %prep_oldset, label %copy_set
 
 copy_set:
-  %target_set = load i64, ptr %set, align 8
+  %target_set_p = alloca i64, align 8
+  %set_copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_set_p, ptr %set, i64 8)
+  %set_copy_ok = icmp eq i64 %set_copied, 0
+  br i1 %set_copy_ok, label %translate_set, label %set_fault
+
+translate_set:
+  %target_set = load i64, ptr %target_set_p, align 8
   %native_set64 = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_set)
   %bad_set = icmp slt i64 %native_set64, 0
   br i1 %bad_set, label %invalid, label %store_set
@@ -3356,28 +4095,34 @@ store_oldset:
   %darwin_old = load i32, ptr %darwin_oldset, align 4
   %darwin_old64 = zext i32 %darwin_old to i64
   %target_old = call i64 @__mtrt_darwin_sigset_from_native(i64 %darwin_old64)
-  store i64 %target_old, ptr %oldset, align 8
-  ret i64 %r
+  %target_old_p = alloca i64, align 8
+  store i64 %target_old, ptr %target_old_p, align 8
+  %old_copied = call i64 @__mtrt_darwin_copy_to_target(ptr %oldset, ptr %target_old_p, i64 8)
+  ret i64 %old_copied
+
+set_fault:
+  ret i64 %set_copied
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
+define hidden i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
 entry:
+  %target_mask_p = alloca i64, align 8
   %is_null = icmp eq ptr %sigmask, null
-  br i1 %is_null, label %fault, label %check_ptr
+  br i1 %is_null, label %fault, label %copy_mask
 
 fault:
   ret i64 -14
 
-check_ptr:
-  %sigmask_addr = ptrtoint ptr %sigmask to i64
-  %bad_ptr = icmp ult i64 %sigmask_addr, 4096
-  br i1 %bad_ptr, label %fault, label %load_mask
+copy_mask:
+  %copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_mask_p, ptr %sigmask, i64 8)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %load_mask, label %copy_fault
 
 load_mask:
-  %target_mask = load i64, ptr %sigmask, align 8
+  %target_mask = load i64, ptr %target_mask_p, align 8
   %native_mask = call i64 @__mtrt_darwin_sigset_to_native(i64 %target_mask)
   %bad_mask = icmp slt i64 %native_mask, 0
   br i1 %bad_mask, label %invalid, label %call_sigsuspend
@@ -3390,19 +4135,22 @@ call_sigsuspend:
   %darwin_mask = zext i32 %darwin_mask32 to i64
   %r = call i64 @__mtrt_darwin_syscall1(i64 111, i64 %darwin_mask)
   ret i64 %r
+
+copy_fault:
+  ret i64 %copied
 }
 
-define i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
+define hidden i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
 entry:
   ret i64 -38
 }
 
-define i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
+define hidden i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
 entry:
   ret i64 -38
 }
 
-define i64 @__mtrt_host_times(ptr %buf) {
+define hidden i64 @__mtrt_host_times(ptr %buf) {
 entry:
   %timebase = alloca [8 x i8], align 4
   %timebase_r = call i64 @__mtrt_darwin_timebase_info_trap(ptr %timebase)
@@ -3437,6 +4185,7 @@ compute_elapsed:
 get_self_usage:
   %self = alloca [256 x i8], align 16
   %children = alloca [256 x i8], align 16
+  %target_tms = alloca [32 x i8], align 8
   %self_i = ptrtoint ptr %self to i64
   %self_r = call i64 @__mtrt_darwin_syscall2(i64 117, i64 0, i64 %self_i)
   %self_ok = icmp eq i64 %self_r, 0
@@ -3457,15 +4206,20 @@ store_tms:
   %stime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %self_stime_p)
   %cutime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %children_utime_p)
   %cstime_ticks = call i64 @__mtrt_darwin_timeval_to_ticks(ptr %children_stime_p)
-  %utime_out = getelementptr i8, ptr %buf, i64 0
-  %stime_out = getelementptr i8, ptr %buf, i64 8
-  %cutime_out = getelementptr i8, ptr %buf, i64 16
-  %cstime_out = getelementptr i8, ptr %buf, i64 24
+  %utime_out = getelementptr i8, ptr %target_tms, i64 0
+  %stime_out = getelementptr i8, ptr %target_tms, i64 8
+  %cutime_out = getelementptr i8, ptr %target_tms, i64 16
+  %cstime_out = getelementptr i8, ptr %target_tms, i64 24
   store i64 %utime_ticks, ptr %utime_out, align 8
   store i64 %stime_ticks, ptr %stime_out, align 8
   store i64 %cutime_ticks, ptr %cutime_out, align 8
   store i64 %cstime_ticks, ptr %cstime_out, align 8
-  br label %done
+  %copied = call i64 @__mtrt_darwin_copy_to_target(ptr %buf, ptr %target_tms, i64 32)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %done, label %copy_fault
+
+copy_fault:
+  ret i64 %copied
 
 self_done:
   ret i64 %self_r
@@ -3477,8 +4231,9 @@ done:
   ret i64 %elapsed_ticks
 }
 
-define i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
+define hidden i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
 entry:
+  %target_times = alloca [32 x i8], align 8
   %path_i = ptrtoint ptr %path to i64
   %is_null = icmp eq ptr %times, null
   br i1 %is_null, label %call_null, label %convert
@@ -3488,10 +4243,15 @@ call_null:
   ret i64 %r_null
 
 convert:
-  %atime_sec_p = getelementptr i8, ptr %times, i64 0
-  %atime_usec_p = getelementptr i8, ptr %times, i64 8
-  %mtime_sec_p = getelementptr i8, ptr %times, i64 16
-  %mtime_usec_p = getelementptr i8, ptr %times, i64 24
+  %copied = call i64 @__mtrt_darwin_copy_from_target(ptr %target_times, ptr %times, i64 32)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %load_times, label %copy_fault
+
+load_times:
+  %atime_sec_p = getelementptr i8, ptr %target_times, i64 0
+  %atime_usec_p = getelementptr i8, ptr %target_times, i64 8
+  %mtime_sec_p = getelementptr i8, ptr %target_times, i64 16
+  %mtime_usec_p = getelementptr i8, ptr %target_times, i64 24
   %atime_sec = load i64, ptr %atime_sec_p, align 8
   %atime_usec = load i64, ptr %atime_usec_p, align 8
   %mtime_sec = load i64, ptr %mtime_sec_p, align 8
@@ -3507,6 +4267,9 @@ convert:
 
 invalid:
   ret i64 -22
+
+copy_fault:
+  ret i64 %copied
 
 store:
   %native = alloca [32 x i8], align 8

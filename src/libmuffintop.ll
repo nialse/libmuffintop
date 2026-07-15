@@ -5,7 +5,86 @@
 %struct.timespec = type { i64, i64 }
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
-@__mtrt_poc_sigcont = constant i32 19, align 4
+@mtrt_errno_EPERM = constant i32 1, align 4
+@mtrt_errno_ENOENT = constant i32 2, align 4
+@mtrt_errno_ESRCH = constant i32 3, align 4
+@mtrt_errno_EINTR = constant i32 4, align 4
+@mtrt_errno_EIO = constant i32 5, align 4
+@mtrt_errno_ENXIO = constant i32 6, align 4
+@mtrt_errno_E2BIG = constant i32 7, align 4
+@mtrt_errno_ENOEXEC = constant i32 8, align 4
+@mtrt_errno_EBADF = constant i32 9, align 4
+@mtrt_errno_ECHILD = constant i32 10, align 4
+@mtrt_errno_EAGAIN = constant i32 11, align 4
+@mtrt_errno_EWOULDBLOCK = constant i32 11, align 4
+@mtrt_errno_ENOMEM = constant i32 12, align 4
+@mtrt_errno_EACCES = constant i32 13, align 4
+@mtrt_errno_EFAULT = constant i32 14, align 4
+@mtrt_errno_EBUSY = constant i32 16, align 4
+@mtrt_errno_EEXIST = constant i32 17, align 4
+@mtrt_errno_EXDEV = constant i32 18, align 4
+@mtrt_errno_ENODEV = constant i32 19, align 4
+@mtrt_errno_ENOTDIR = constant i32 20, align 4
+@mtrt_errno_EISDIR = constant i32 21, align 4
+@mtrt_errno_EINVAL = constant i32 22, align 4
+@mtrt_errno_ENFILE = constant i32 23, align 4
+@mtrt_errno_EMFILE = constant i32 24, align 4
+@mtrt_errno_ENOTTY = constant i32 25, align 4
+@mtrt_errno_ETXTBSY = constant i32 26, align 4
+@mtrt_errno_EFBIG = constant i32 27, align 4
+@mtrt_errno_ENOSPC = constant i32 28, align 4
+@mtrt_errno_ESPIPE = constant i32 29, align 4
+@mtrt_errno_EROFS = constant i32 30, align 4
+@mtrt_errno_EMLINK = constant i32 31, align 4
+@mtrt_errno_EPIPE = constant i32 32, align 4
+@mtrt_errno_EDOM = constant i32 33, align 4
+@mtrt_errno_ERANGE = constant i32 34, align 4
+@mtrt_errno_EDEADLK = constant i32 35, align 4
+@mtrt_errno_ENAMETOOLONG = constant i32 36, align 4
+@mtrt_errno_ENOLCK = constant i32 37, align 4
+@mtrt_errno_ENOSYS = constant i32 38, align 4
+@mtrt_errno_ENOTEMPTY = constant i32 39, align 4
+@mtrt_errno_ELOOP = constant i32 40, align 4
+@mtrt_errno_ENOMSG = constant i32 42, align 4
+@mtrt_errno_EIDRM = constant i32 43, align 4
+@mtrt_errno_ENOSTR = constant i32 60, align 4
+@mtrt_errno_ENODATA = constant i32 61, align 4
+@mtrt_errno_ETIME = constant i32 62, align 4
+@mtrt_errno_ENOSR = constant i32 63, align 4
+@mtrt_errno_ENOLINK = constant i32 67, align 4
+@mtrt_errno_EPROTO = constant i32 71, align 4
+@mtrt_errno_EBADMSG = constant i32 74, align 4
+@mtrt_errno_EOVERFLOW = constant i32 75, align 4
+@mtrt_errno_EILSEQ = constant i32 84, align 4
+@mtrt_errno_ENOTSOCK = constant i32 88, align 4
+@mtrt_errno_EDESTADDRREQ = constant i32 89, align 4
+@mtrt_errno_EMSGSIZE = constant i32 90, align 4
+@mtrt_errno_EPROTOTYPE = constant i32 91, align 4
+@mtrt_errno_ENOPROTOOPT = constant i32 92, align 4
+@mtrt_errno_EPROTONOSUPPORT = constant i32 93, align 4
+@mtrt_errno_EOPNOTSUPP = constant i32 95, align 4
+@mtrt_errno_ENOTSUP = constant i32 95, align 4
+@mtrt_errno_EAFNOSUPPORT = constant i32 97, align 4
+@mtrt_errno_EADDRINUSE = constant i32 98, align 4
+@mtrt_errno_EADDRNOTAVAIL = constant i32 99, align 4
+@mtrt_errno_ENETDOWN = constant i32 100, align 4
+@mtrt_errno_ENETUNREACH = constant i32 101, align 4
+@mtrt_errno_ENETRESET = constant i32 102, align 4
+@mtrt_errno_ECONNABORTED = constant i32 103, align 4
+@mtrt_errno_ECONNRESET = constant i32 104, align 4
+@mtrt_errno_ENOBUFS = constant i32 105, align 4
+@mtrt_errno_EISCONN = constant i32 106, align 4
+@mtrt_errno_ENOTCONN = constant i32 107, align 4
+@mtrt_errno_ETIMEDOUT = constant i32 110, align 4
+@mtrt_errno_ECONNREFUSED = constant i32 111, align 4
+@mtrt_errno_EHOSTUNREACH = constant i32 113, align 4
+@mtrt_errno_EALREADY = constant i32 114, align 4
+@mtrt_errno_EINPROGRESS = constant i32 115, align 4
+@mtrt_errno_ESTALE = constant i32 116, align 4
+@mtrt_errno_EDQUOT = constant i32 122, align 4
+@mtrt_errno_ECANCELED = constant i32 125, align 4
+@mtrt_errno_EOWNERDEAD = constant i32 130, align 4
+@mtrt_errno_ENOTRECOVERABLE = constant i32 131, align 4
 
 declare i64 @__mtrt_host_getpid()
 declare i64 @__mtrt_host_getppid()
@@ -104,7 +183,7 @@ declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
 declare i64 @__mtrt_host_times(ptr)
 declare i64 @__mtrt_host_utimes(ptr, ptr)
 
-define i8 @__mtrt_common_dtype(i8 %dtype) {
+define hidden i8 @__mtrt_common_dtype(i8 %dtype) {
 entry:
   switch i8 %dtype, label %unknown [
     i8 1, label %known
@@ -123,7 +202,7 @@ unknown:
   ret i8 0
 }
 
-define i64 @__mtrt_name_len_bounded(ptr %name, i64 %limit) {
+define hidden i64 @__mtrt_name_len_bounded(ptr %name, i64 %limit) {
 entry:
   br label %loop
 
@@ -146,7 +225,7 @@ done:
   ret i64 %i
 }
 
-define void @__mtrt_store_dent64(ptr %dst, i64 %ino, i64 %reclen, i8 %dtype, ptr %name, i64 %name_len) {
+define hidden void @__mtrt_store_dent64(ptr %dst, i64 %ino, i64 %reclen, i8 %dtype, ptr %name, i64 %name_len) {
 entry:
   store i64 %ino, ptr %dst, align 8
   %reclen_p = getelementptr i8, ptr %dst, i64 8
@@ -192,7 +271,7 @@ done:
   ret void
 }
 
-define i64 @__mtrt_strlen(ptr %s) {
+define hidden i64 @__mtrt_strlen(ptr %s) {
 entry:
   br label %loop
 
@@ -211,7 +290,7 @@ done:
   ret i64 %i
 }
 
-define void @__mtrt_copy_cstr(ptr %dst, ptr %src, i64 %len) {
+define hidden void @__mtrt_copy_cstr(ptr %dst, ptr %src, i64 %len) {
 entry:
   br label %loop
 
@@ -597,18 +676,50 @@ entry:
 
 define i64 @readv(i32 %fd, ptr %iov, i32 %iovcnt) {
 entry:
+  %negative = icmp slt i32 %iovcnt, 0
+  %too_many = icmp sgt i32 %iovcnt, 1024
+  %invalid_count = or i1 %negative, %too_many
+  br i1 %invalid_count, label %invalid, label %check_zero
+
+check_zero:
+  %zero = icmp eq i32 %iovcnt, 0
+  br i1 %zero, label %done, label %call_host
+
+call_host:
   %fd64 = sext i32 %fd to i64
   %iovcnt64 = sext i32 %iovcnt to i64
   %raw = call i64 @__mtrt_host_readv(i64 %fd64, ptr %iov, i64 %iovcnt64)
   ret i64 %raw
+
+invalid:
+  ret i64 -22
+
+done:
+  ret i64 0
 }
 
 define i64 @writev(i32 %fd, ptr %iov, i32 %iovcnt) {
 entry:
+  %negative = icmp slt i32 %iovcnt, 0
+  %too_many = icmp sgt i32 %iovcnt, 1024
+  %invalid_count = or i1 %negative, %too_many
+  br i1 %invalid_count, label %invalid, label %check_zero
+
+check_zero:
+  %zero = icmp eq i32 %iovcnt, 0
+  br i1 %zero, label %done, label %call_host
+
+call_host:
   %fd64 = sext i32 %fd to i64
   %iovcnt64 = sext i32 %iovcnt to i64
   %raw = call i64 @__mtrt_host_writev(i64 %fd64, ptr %iov, i64 %iovcnt64)
   ret i64 %raw
+
+invalid:
+  ret i64 -22
+
+done:
+  ret i64 0
 }
 
 define i32 @open(ptr %path, i32 %flags, i32 %mode) {

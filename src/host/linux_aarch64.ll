@@ -6,63 +6,86 @@ target triple = "aarch64-unknown-linux-gnu"
 %struct.mtrt_stat64 = type { i64, i64, i64, i32, i32, i32, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }
 
 @.mtrt_empty_path = private unnamed_addr constant [1 x i8] zeroinitializer
-@__mtrt_platform_uname_sys = constant [6 x i8] c"Linux\0A", align 1
-@__mtrt_platform_uname_sys_len = constant i64 6, align 8
-@__mtrt_platform_uname_all = constant [28 x i8] c"Linux muffintop 0 0 aarch64\0A", align 1
-@__mtrt_platform_uname_all_len = constant i64 28, align 8
-@__mtrt_linux_handler_sig17 = internal global i64 0, align 8
-@__mtrt_linux_handler_sig18 = internal global i64 0, align 8
-@__mtrt_linux_handler_sig19 = internal global i64 0, align 8
-@__mtrt_linux_handler_sig20 = internal global i64 0, align 8
-@__mtrt_linux_flags_sig17 = internal global i64 0, align 8
-@__mtrt_linux_flags_sig18 = internal global i64 0, align 8
-@__mtrt_linux_flags_sig19 = internal global i64 0, align 8
-@__mtrt_linux_flags_sig20 = internal global i64 0, align 8
+@__mtrt_platform_uname_sys = hidden constant [6 x i8] c"Linux\0A", align 1
+@__mtrt_platform_uname_sys_len = hidden constant i64 6, align 8
+@__mtrt_platform_uname_all = hidden constant [28 x i8] c"Linux muffintop 0 0 aarch64\0A", align 1
+@__mtrt_platform_uname_all_len = hidden constant i64 28, align 8
+@__mtrt_linux_target_handlers = internal global [23 x i64] zeroinitializer, align 8
+@__mtrt_linux_target_flags = internal global [23 x i64] zeroinitializer, align 8
 
 declare i8 @__mtrt_common_dtype(i8)
 declare i64 @__mtrt_name_len_bounded(ptr, i64)
 declare void @__mtrt_store_dent64(ptr, i64, i64, i8, ptr, i64)
+declare i64 @__mtrt_linux_open_flags_to_native(i64)
+declare i64 @__mtrt_linux_dirfd_to_native(i64)
+declare i64 @__mtrt_linux_access_mode_to_native(i64)
+declare i64 @__mtrt_linux_mode_to_native(i64)
+declare i64 @__mtrt_linux_at_flags_to_native(i64)
+declare i64 @__mtrt_linux_prot_to_native(i64)
+declare i64 @__mtrt_linux_mmap_flags_to_native(i64)
+declare i64 @__mtrt_linux_msync_flags_to_native(i64)
+declare i64 @__mtrt_linux_madvise_to_native(i64)
+declare i64 @__mtrt_linux_lseek_to_native(i64)
+declare i64 @__mtrt_linux_wait_options_to_native(i64)
+declare i64 @__mtrt_linux_pipe2_flags_to_native(i64)
+
+define internal i64 @__mtrt_linux_result_to_target(i64 %result) {
+entry:
+  %failed = icmp slt i64 %result, 0
+  %native = sub i64 0, %result
+  %known = icmp ule i64 %native, 133
+  %target_error = select i1 %known, i64 %result, i64 -5
+  %target = select i1 %failed, i64 %target_error, i64 %result
+  ret i64 %target
+}
 
 define internal i64 @__mtrt_linux_syscall0(i64 %nr) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},~{memory}"(i64 %nr)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_syscall1(i64 %nr, i64 %a1) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},~{memory}"(i64 %nr, i64 %a1)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_syscall2(i64 %nr, i64 %a1, i64 %a2) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},{x1},~{memory}"(i64 %nr, i64 %a1, i64 %a2)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_syscall3(i64 %nr, i64 %a1, i64 %a2, i64 %a3) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},{x1},{x2},~{memory}"(i64 %nr, i64 %a1, i64 %a2, i64 %a3)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_syscall4(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},{x1},{x2},{x3},~{memory}"(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_syscall5(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},{x1},{x2},{x3},{x4},~{memory}"(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_syscall6(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5, i64 %a6) {
 entry:
   %ret = call i64 asm sideeffect "svc #0", "={x0},{x8},{x0},{x1},{x2},{x3},{x4},{x5},~{memory}"(i64 %nr, i64 %a1, i64 %a2, i64 %a3, i64 %a4, i64 %a5, i64 %a6)
-  ret i64 %ret
+  %target = call i64 @__mtrt_linux_result_to_target(i64 %ret)
+  ret i64 %target
 }
 
 define internal i64 @__mtrt_linux_copy_from_target(ptr %dst, ptr %src, i64 %len) {
@@ -151,32 +174,32 @@ done:
 declare i64 @__mtrt_linux_translate_getdents64(ptr %buf, i64 %native_bytes)
 
 
-define i64 @__mtrt_host_getpid() {
+define hidden i64 @__mtrt_host_getpid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 172)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getppid() {
+define hidden i64 @__mtrt_host_getppid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 173)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getuid() {
+define hidden i64 @__mtrt_host_getuid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 174)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_geteuid() {
+define hidden i64 @__mtrt_host_geteuid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 175)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getgid() {
+define hidden i64 @__mtrt_host_getgid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 176)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fork() {
+define hidden i64 @__mtrt_host_fork() {
   %r = call i64 @__mtrt_linux_syscall5(i64 220, i64 17, i64 0, i64 0, i64 0, i64 0)
   ret i64 %r
 }
@@ -184,10 +207,11 @@ define i64 @__mtrt_host_fork() {
 declare i32 @__mtrt_linux_wait_status_from_native(i32 %status)
 
 
-define i64 @__mtrt_host_wait4(i64 %pid, ptr %status, i64 %options) {
+define hidden i64 @__mtrt_host_wait4(i64 %pid, ptr %status, i64 %options) {
 entry:
+  %native_options = call i64 @__mtrt_linux_wait_options_to_native(i64 %options)
   %status_i = ptrtoint ptr %status to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 260, i64 %pid, i64 %status_i, i64 %options, i64 0)
+  %r = call i64 @__mtrt_linux_syscall4(i64 260, i64 %pid, i64 %status_i, i64 %native_options, i64 0)
   %waited = icmp sgt i64 %r, 0
   %status_present = icmp ne ptr %status, null
   %translate = and i1 %waited, %status_present
@@ -203,29 +227,29 @@ done:
   ret i64 %r
 }
 
-define void @__mtrt_host_exit(i64 %status) {
+define hidden void @__mtrt_host_exit(i64 %status) {
   %_ = call i64 @__mtrt_linux_syscall1(i64 93, i64 %status)
   unreachable
 }
 
-define i64 @__mtrt_host_write(i64 %fd, ptr %buf, i64 %count) {
+define hidden i64 @__mtrt_host_write(i64 %fd, ptr %buf, i64 %count) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 64, i64 %fd, i64 %buf_i, i64 %count)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_read(i64 %fd, ptr %buf, i64 %count) {
+define hidden i64 @__mtrt_host_read(i64 %fd, ptr %buf, i64 %count) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 63, i64 %fd, i64 %buf_i, i64 %count)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_close(i64 %fd) {
+define hidden i64 @__mtrt_host_close(i64 %fd) {
   %r = call i64 @__mtrt_linux_syscall1(i64 57, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem) {
+define hidden i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem) {
   %req_i = ptrtoint ptr %req to i64
   %rem_i = ptrtoint ptr %rem to i64
   %r = call i64 @__mtrt_linux_syscall2(i64 101, i64 %req_i, i64 %rem_i)
@@ -235,7 +259,7 @@ define i64 @__mtrt_host_nanosleep(ptr %req, ptr %rem) {
 declare i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
 
 
-define i64 @__mtrt_host_clock_gettime(i64 %clockid, ptr %tp) {
+define hidden i64 @__mtrt_host_clock_gettime(i64 %clockid, ptr %tp) {
 entry:
   %native_clockid = call i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
   %bad_clockid = icmp slt i64 %native_clockid, 0
@@ -317,6 +341,46 @@ entry:
 
 declare void @__mtrt_linux_siginfo_to_target(ptr %target_info, ptr %native_info)
 
+define internal void @__mtrt_linux_build_ucontext_v1(ptr %target_context) {
+entry:
+  %native_mask_p = alloca i64, align 8
+  %native_stack = alloca [24 x i8], align 8
+  store i64 0, ptr %native_mask_p, align 8
+  store i64 0, ptr %native_stack, align 8
+  %native_stack_flags_p = getelementptr i8, ptr %native_stack, i64 8
+  store i32 0, ptr %native_stack_flags_p, align 4
+  %native_stack_size_p = getelementptr i8, ptr %native_stack, i64 16
+  store i64 0, ptr %native_stack_size_p, align 8
+  %mask_i = ptrtoint ptr %native_mask_p to i64
+  %mask_r = call i64 @__mtrt_linux_syscall4(i64 135, i64 0, i64 0, i64 %mask_i, i64 8)
+  %stack_i = ptrtoint ptr %native_stack to i64
+  %stack_r = call i64 @__mtrt_linux_syscall2(i64 132, i64 0, i64 %stack_i)
+  %native_mask = load i64, ptr %native_mask_p, align 8
+  %mask_ok = icmp eq i64 %mask_r, 0
+  %target_mask_value = call i64 @__mtrt_linux_sigset_from_native(i64 %native_mask)
+  %target_mask = select i1 %mask_ok, i64 %target_mask_value, i64 0
+  %stack_address = load i64, ptr %native_stack, align 8
+  %stack_flags32 = load i32, ptr %native_stack_flags_p, align 4
+  %stack_flags = and i32 %stack_flags32, 3
+  %stack_size = load i64, ptr %native_stack_size_p, align 8
+  %stack_ok = icmp eq i64 %stack_r, 0
+  %target_stack_address = select i1 %stack_ok, i64 %stack_address, i64 0
+  %target_stack_size = select i1 %stack_ok, i64 %stack_size, i64 0
+  %target_stack_flags = select i1 %stack_ok, i32 %stack_flags, i32 0
+  store i64 1, ptr %target_context, align 8
+  %mask_out = getelementptr i8, ptr %target_context, i64 8
+  store i64 %target_mask, ptr %mask_out, align 8
+  %stack_address_out = getelementptr i8, ptr %target_context, i64 16
+  store i64 %target_stack_address, ptr %stack_address_out, align 8
+  %stack_size_out = getelementptr i8, ptr %target_context, i64 24
+  store i64 %target_stack_size, ptr %stack_size_out, align 8
+  %stack_flags_out = getelementptr i8, ptr %target_context, i64 32
+  store i32 %target_stack_flags, ptr %stack_flags_out, align 4
+  %reserved_out = getelementptr i8, ptr %target_context, i64 36
+  store i32 0, ptr %reserved_out, align 4
+  ret void
+}
+
 
 define internal void @__mtrt_linux_dispatch_target_signal(i64 %target_sig, ptr %handler_slot, ptr %flags_slot, ptr %native_info, ptr %ucontext) {
 entry:
@@ -340,6 +404,8 @@ call_simple:
 
 call_siginfo:
   %target_info = alloca [16 x i8], align 4
+  %target_context = alloca [40 x i8], align 8
+  call void @__mtrt_linux_build_ucontext_v1(ptr %target_context)
   %native_info_null = icmp eq ptr %native_info, null
   br i1 %native_info_null, label %call_siginfo_handler, label %copy_siginfo
 
@@ -351,154 +417,49 @@ call_siginfo_handler:
   %info_arg = phi ptr [ null, %call_siginfo ], [ %target_info, %copy_siginfo ]
   %handler3 = inttoptr i64 %handler_i to ptr
   %target_sig32_info = trunc i64 %target_sig to i32
-  call void %handler3(i32 %target_sig32_info, ptr %info_arg, ptr %ucontext)
+  call void %handler3(i32 %target_sig32_info, ptr %info_arg, ptr %target_context)
   br label %done
 
 done:
   ret void
 }
 
-define internal void @__mtrt_linux_dispatch_sig17(i32 %native_sig, ptr %native_info, ptr %ucontext) {
+define internal void @__mtrt_linux_dispatch_any(i32 %native_sig32, ptr %native_info, ptr %ucontext) {
 entry:
-  call void @__mtrt_linux_dispatch_target_signal(i64 17, ptr @__mtrt_linux_handler_sig17, ptr @__mtrt_linux_flags_sig17, ptr %native_info, ptr %ucontext)
-  ret void
-}
-
-define internal void @__mtrt_linux_dispatch_sig18(i32 %native_sig, ptr %native_info, ptr %ucontext) {
-entry:
-  call void @__mtrt_linux_dispatch_target_signal(i64 18, ptr @__mtrt_linux_handler_sig18, ptr @__mtrt_linux_flags_sig18, ptr %native_info, ptr %ucontext)
-  ret void
-}
-
-define internal void @__mtrt_linux_dispatch_sig19(i32 %native_sig, ptr %native_info, ptr %ucontext) {
-entry:
-  call void @__mtrt_linux_dispatch_target_signal(i64 19, ptr @__mtrt_linux_handler_sig19, ptr @__mtrt_linux_flags_sig19, ptr %native_info, ptr %ucontext)
-  ret void
-}
-
-define internal void @__mtrt_linux_dispatch_sig20(i32 %native_sig, ptr %native_info, ptr %ucontext) {
-entry:
-  call void @__mtrt_linux_dispatch_target_signal(i64 20, ptr @__mtrt_linux_handler_sig20, ptr @__mtrt_linux_flags_sig20, ptr %native_info, ptr %ucontext)
+  %native_sig = zext i32 %native_sig32 to i64
+  %target_sig = call i64 @__mtrt_linux_signal_from_native(i64 %native_sig)
+  %handler_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_linux_target_handlers, i64 0, i64 %target_sig
+  %flags_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_linux_target_flags, i64 0, i64 %target_sig
+  call void @__mtrt_linux_dispatch_target_signal(i64 %target_sig, ptr %handler_slot, ptr %flags_slot, ptr %native_info, ptr %ucontext)
   ret void
 }
 
 define internal i64 @__mtrt_linux_sigaction_dispatcher(i64 %sig) {
 entry:
-  switch i64 %sig, label %none [
-    i64 17, label %sig17
-    i64 18, label %sig18
-    i64 19, label %sig19
-    i64 20, label %sig20
-  ]
-
-sig17:
-  %d17 = ptrtoint ptr @__mtrt_linux_dispatch_sig17 to i64
-  ret i64 %d17
-
-sig18:
-  %d18 = ptrtoint ptr @__mtrt_linux_dispatch_sig18 to i64
-  ret i64 %d18
-
-sig19:
-  %d19 = ptrtoint ptr @__mtrt_linux_dispatch_sig19 to i64
-  ret i64 %d19
-
-sig20:
-  %d20 = ptrtoint ptr @__mtrt_linux_dispatch_sig20 to i64
-  ret i64 %d20
-
-none:
-  ret i64 0
+  %dispatcher = ptrtoint ptr @__mtrt_linux_dispatch_any to i64
+  ret i64 %dispatcher
 }
 
 define internal i64 @__mtrt_linux_load_target_handler(i64 %sig) {
 entry:
-  switch i64 %sig, label %none [
-    i64 17, label %sig17
-    i64 18, label %sig18
-    i64 19, label %sig19
-    i64 20, label %sig20
-  ]
-
-sig17:
-  %h17 = load i64, ptr @__mtrt_linux_handler_sig17, align 8
-  ret i64 %h17
-
-sig18:
-  %h18 = load i64, ptr @__mtrt_linux_handler_sig18, align 8
-  ret i64 %h18
-
-sig19:
-  %h19 = load i64, ptr @__mtrt_linux_handler_sig19, align 8
-  ret i64 %h19
-
-sig20:
-  %h20 = load i64, ptr @__mtrt_linux_handler_sig20, align 8
-  ret i64 %h20
-
-none:
-  ret i64 0
+  %slot = getelementptr inbounds [23 x i64], ptr @__mtrt_linux_target_handlers, i64 0, i64 %sig
+  %handler = load i64, ptr %slot, align 8
+  ret i64 %handler
 }
 
 define internal i64 @__mtrt_linux_load_target_flags(i64 %sig) {
 entry:
-  switch i64 %sig, label %none [
-    i64 17, label %sig17
-    i64 18, label %sig18
-    i64 19, label %sig19
-    i64 20, label %sig20
-  ]
-
-sig17:
-  %f17 = load i64, ptr @__mtrt_linux_flags_sig17, align 8
-  ret i64 %f17
-
-sig18:
-  %f18 = load i64, ptr @__mtrt_linux_flags_sig18, align 8
-  ret i64 %f18
-
-sig19:
-  %f19 = load i64, ptr @__mtrt_linux_flags_sig19, align 8
-  ret i64 %f19
-
-sig20:
-  %f20 = load i64, ptr @__mtrt_linux_flags_sig20, align 8
-  ret i64 %f20
-
-none:
-  ret i64 0
+  %slot = getelementptr inbounds [23 x i64], ptr @__mtrt_linux_target_flags, i64 0, i64 %sig
+  %flags = load i64, ptr %slot, align 8
+  ret i64 %flags
 }
 
 define internal void @__mtrt_linux_store_target_action(i64 %sig, i64 %handler, i64 %flags) {
 entry:
-  switch i64 %sig, label %done [
-    i64 17, label %sig17
-    i64 18, label %sig18
-    i64 19, label %sig19
-    i64 20, label %sig20
-  ]
-
-sig17:
-  store i64 %handler, ptr @__mtrt_linux_handler_sig17, align 8
-  store i64 %flags, ptr @__mtrt_linux_flags_sig17, align 8
-  br label %done
-
-sig18:
-  store i64 %handler, ptr @__mtrt_linux_handler_sig18, align 8
-  store i64 %flags, ptr @__mtrt_linux_flags_sig18, align 8
-  br label %done
-
-sig19:
-  store i64 %handler, ptr @__mtrt_linux_handler_sig19, align 8
-  store i64 %flags, ptr @__mtrt_linux_flags_sig19, align 8
-  br label %done
-
-sig20:
-  store i64 %handler, ptr @__mtrt_linux_handler_sig20, align 8
-  store i64 %flags, ptr @__mtrt_linux_flags_sig20, align 8
-  br label %done
-
-done:
+  %handler_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_linux_target_handlers, i64 0, i64 %sig
+  %flags_slot = getelementptr inbounds [23 x i64], ptr @__mtrt_linux_target_flags, i64 0, i64 %sig
+  store i64 %handler, ptr %handler_slot, align 8
+  store i64 %flags, ptr %flags_slot, align 8
   ret void
 }
 
@@ -510,7 +471,7 @@ entry:
   ret i64 %handler
 }
 
-define i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
+define hidden i64 @__mtrt_host_kill(i64 %pid, i64 %sig) {
   %native_sig = call i64 @__mtrt_linux_signal_to_native(i64 %sig)
   %bad_sig = icmp slt i64 %native_sig, 0
   br i1 %bad_sig, label %invalid, label %call_kill
@@ -523,12 +484,12 @@ call_kill:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_dup(i64 %oldfd) {
+define hidden i64 @__mtrt_host_dup(i64 %oldfd) {
   %r = call i64 @__mtrt_linux_syscall1(i64 23, i64 %oldfd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_dup2(i64 %oldfd, i64 %newfd) {
+define hidden i64 @__mtrt_host_dup2(i64 %oldfd, i64 %newfd) {
 entry:
   %same_fd = icmp eq i64 %oldfd, %newfd
   br i1 %same_fd, label %validate_same, label %dup3
@@ -549,78 +510,138 @@ dup3:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_chdir(ptr %path) {
+define hidden i64 @__mtrt_host_chdir(ptr %path) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall1(i64 49, i64 %path_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchdir(i64 %fd) {
+define hidden i64 @__mtrt_host_fchdir(i64 %fd) {
   %r = call i64 @__mtrt_linux_syscall1(i64 50, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getpgid(i64 %pid) {
+define hidden i64 @__mtrt_host_getpgid(i64 %pid) {
   %r = call i64 @__mtrt_linux_syscall1(i64 155, i64 %pid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getpgrp() {
+define hidden i64 @__mtrt_host_getpgrp() {
   %r = call i64 @__mtrt_linux_syscall1(i64 155, i64 0)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getsid(i64 %pid) {
+define hidden i64 @__mtrt_host_getsid(i64 %pid) {
   %r = call i64 @__mtrt_linux_syscall1(i64 156, i64 %pid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_setpgid(i64 %pid, i64 %pgid) {
+define hidden i64 @__mtrt_host_setpgid(i64 %pid, i64 %pgid) {
   %r = call i64 @__mtrt_linux_syscall2(i64 154, i64 %pid, i64 %pgid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_setsid() {
+define hidden i64 @__mtrt_host_setsid() {
   %r = call i64 @__mtrt_linux_syscall0(i64 157)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_umask(i64 %mask) {
-  %r = call i64 @__mtrt_linux_syscall1(i64 166, i64 %mask)
+define hidden i64 @__mtrt_host_umask(i64 %mask) {
+  %native_mask = call i64 @__mtrt_linux_mode_to_native(i64 %mask)
+  %r = call i64 @__mtrt_linux_syscall1(i64 166, i64 %native_mask)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pipe(ptr %fds) {
+define hidden i64 @__mtrt_host_pipe(ptr %fds) {
   %fds_i = ptrtoint ptr %fds to i64
   %r = call i64 @__mtrt_linux_syscall2(i64 59, i64 %fds_i, i64 0)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_readv(i64 %fd, ptr %iov, i64 %iovcnt) {
-  %iov_i = ptrtoint ptr %iov to i64
+define internal i64 @__mtrt_linux_iovec_from_target(ptr %target, i64 %count, ptr %native) {
+entry:
+  %target_entry = alloca [16 x i8], align 8
+  br label %loop
+
+loop:
+  %i = phi i64 [ 0, %entry ], [ %next, %store ]
+  %done = icmp uge i64 %i, %count
+  br i1 %done, label %return, label %copy
+
+copy:
+  %offset = mul i64 %i, 16
+  %target_base_p = getelementptr i8, ptr %target, i64 %offset
+  %copied = call i64 @__mtrt_linux_copy_from_target(ptr %target_entry, ptr %target_base_p, i64 16)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %store, label %fault
+
+store:
+  %target_len_p = getelementptr i8, ptr %target_entry, i64 8
+  %base_i = load i64, ptr %target_entry, align 8
+  %len = load i64, ptr %target_len_p, align 8
+  %native_base_p = getelementptr i8, ptr %native, i64 %offset
+  %native_len_p = getelementptr i8, ptr %native_base_p, i64 8
+  %base = inttoptr i64 %base_i to ptr
+  store ptr %base, ptr %native_base_p, align 8
+  store i64 %len, ptr %native_len_p, align 8
+  %next = add i64 %i, 1
+  br label %loop
+
+fault:
+  ret i64 -14
+
+return:
+  ret i64 0
+}
+
+define hidden i64 @__mtrt_host_readv(i64 %fd, ptr %iov, i64 %iovcnt) {
+  %native_iov = alloca [16 x i8], i64 %iovcnt, align 8
+  %copied = call i64 @__mtrt_linux_iovec_from_target(ptr %iov, i64 %iovcnt, ptr %native_iov)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %call_readv, label %fault
+
+call_readv:
+  %iov_i = ptrtoint ptr %native_iov to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 65, i64 %fd, i64 %iov_i, i64 %iovcnt)
   ret i64 %r
+
+fault:
+  ret i64 -14
 }
 
-define i64 @__mtrt_host_writev(i64 %fd, ptr %iov, i64 %iovcnt) {
-  %iov_i = ptrtoint ptr %iov to i64
+define hidden i64 @__mtrt_host_writev(i64 %fd, ptr %iov, i64 %iovcnt) {
+  %native_iov = alloca [16 x i8], i64 %iovcnt, align 8
+  %copied = call i64 @__mtrt_linux_iovec_from_target(ptr %iov, i64 %iovcnt, ptr %native_iov)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %call_writev, label %fault
+
+call_writev:
+  %iov_i = ptrtoint ptr %native_iov to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 66, i64 %fd, i64 %iov_i, i64 %iovcnt)
   ret i64 %r
+
+fault:
+  ret i64 -14
 }
 
-define i64 @__mtrt_host_open(ptr %path, i64 %flags, i64 %mode) {
+define hidden i64 @__mtrt_host_open(ptr %path, i64 %flags, i64 %mode) {
+  %native_flags = call i64 @__mtrt_linux_open_flags_to_native(i64 %flags)
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 56, i64 -100, i64 %path_i, i64 %flags, i64 %mode)
+  %r = call i64 @__mtrt_linux_syscall4(i64 56, i64 -100, i64 %path_i, i64 %native_flags, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
+define hidden i64 @__mtrt_host_openat(i64 %dirfd, ptr %path, i64 %flags, i64 %mode) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_flags = call i64 @__mtrt_linux_open_flags_to_native(i64 %flags)
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 56, i64 %dirfd, i64 %path_i, i64 %flags, i64 %mode)
+  %r = call i64 @__mtrt_linux_syscall4(i64 56, i64 %native_dirfd, i64 %path_i, i64 %native_flags, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_posix_getdents(i64 %fd, ptr %buf, i64 %nbyte, i64 %flags) {
+define hidden i64 @__mtrt_host_posix_getdents(i64 %fd, ptr %buf, i64 %nbyte, i64 %flags) {
 entry:
   %flags_ok = icmp eq i64 %flags, 0
   br i1 %flags_ok, label %check_size, label %invalid
@@ -646,180 +667,204 @@ invalid:
   ret i64 -22
 }
 
-define i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
-  %r = call i64 @__mtrt_linux_syscall3(i64 62, i64 %fd, i64 %offset, i64 %whence)
+define hidden i64 @__mtrt_host_lseek(i64 %fd, i64 %offset, i64 %whence) {
+  %native_whence = call i64 @__mtrt_linux_lseek_to_native(i64 %whence)
+  %r = call i64 @__mtrt_linux_syscall3(i64 62, i64 %fd, i64 %offset, i64 %native_whence)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+define hidden i64 @__mtrt_host_pread(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall4(i64 67, i64 %fd, i64 %buf_i, i64 %count, i64 %offset)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pwrite(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
+define hidden i64 @__mtrt_host_pwrite(i64 %fd, ptr %buf, i64 %count, i64 %offset) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall4(i64 68, i64 %fd, i64 %buf_i, i64 %count, i64 %offset)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_unlink(ptr %path) {
+define hidden i64 @__mtrt_host_unlink(ptr %path) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 35, i64 -100, i64 %path_i, i64 0)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
+define hidden i64 @__mtrt_host_unlinkat(i64 %dirfd, ptr %path, i64 %flags) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_flags = call i64 @__mtrt_linux_at_flags_to_native(i64 %flags)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall3(i64 35, i64 %dirfd, i64 %path_i, i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall3(i64 35, i64 %native_dirfd, i64 %path_i, i64 %native_flags)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_access(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_access(ptr %path, i64 %mode) {
+  %native_mode = call i64 @__mtrt_linux_access_mode_to_native(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 439, i64 -100, i64 %path_i, i64 %mode, i64 0)
+  %r = call i64 @__mtrt_linux_syscall4(i64 439, i64 -100, i64 %path_i, i64 %native_mode, i64 0)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_faccessat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+define hidden i64 @__mtrt_host_faccessat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_mode = call i64 @__mtrt_linux_access_mode_to_native(i64 %mode)
+  %native_flags = call i64 @__mtrt_linux_at_flags_to_native(i64 %flags)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 439, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall4(i64 439, i64 %native_dirfd, i64 %path_i, i64 %native_mode, i64 %native_flags)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_chmod(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_chmod(ptr %path, i64 %mode) {
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall3(i64 53, i64 -100, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_linux_syscall3(i64 53, i64 -100, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchmod(i64 %fd, i64 %mode) {
-  %r = call i64 @__mtrt_linux_syscall2(i64 52, i64 %fd, i64 %mode)
+define hidden i64 @__mtrt_host_fchmod(i64 %fd, i64 %mode) {
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
+  %r = call i64 @__mtrt_linux_syscall2(i64 52, i64 %fd, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+define hidden i64 @__mtrt_host_fchmodat(i64 %dirfd, ptr %path, i64 %mode, i64 %flags) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
+  %native_flags = call i64 @__mtrt_linux_at_flags_to_native(i64 %flags)
   %path_i = ptrtoint ptr %path to i64
-  %has_flags = icmp ne i64 %flags, 0
+  %has_flags = icmp ne i64 %native_flags, 0
   br i1 %has_flags, label %call_fchmodat2, label %call_fchmodat
 
 call_fchmodat:
-  %legacy = call i64 @__mtrt_linux_syscall3(i64 53, i64 %dirfd, i64 %path_i, i64 %mode)
+  %legacy = call i64 @__mtrt_linux_syscall3(i64 53, i64 %native_dirfd, i64 %path_i, i64 %native_mode)
   ret i64 %legacy
 
 call_fchmodat2:
-  %modern = call i64 @__mtrt_linux_syscall4(i64 452, i64 %dirfd, i64 %path_i, i64 %mode, i64 %flags)
+  %modern = call i64 @__mtrt_linux_syscall4(i64 452, i64 %native_dirfd, i64 %path_i, i64 %native_mode, i64 %native_flags)
   ret i64 %modern
 }
 
-define i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
+define hidden i64 @__mtrt_host_link(ptr %oldpath, ptr %newpath) {
   %oldpath_i = ptrtoint ptr %oldpath to i64
   %newpath_i = ptrtoint ptr %newpath to i64
   %r = call i64 @__mtrt_linux_syscall5(i64 37, i64 -100, i64 %oldpath_i, i64 -100, i64 %newpath_i, i64 0)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_linkat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath, i64 %flags) {
+define hidden i64 @__mtrt_host_linkat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath, i64 %flags) {
+  %native_olddirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %olddirfd)
+  %native_newdirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %newdirfd)
+  %native_flags = call i64 @__mtrt_linux_at_flags_to_native(i64 %flags)
   %oldpath_i = ptrtoint ptr %oldpath to i64
   %newpath_i = ptrtoint ptr %newpath to i64
-  %r = call i64 @__mtrt_linux_syscall5(i64 37, i64 %olddirfd, i64 %oldpath_i, i64 %newdirfd, i64 %newpath_i, i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall5(i64 37, i64 %native_olddirfd, i64 %oldpath_i, i64 %native_newdirfd, i64 %newpath_i, i64 %native_flags)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mkdir(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_mkdir(ptr %path, i64 %mode) {
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall3(i64 34, i64 -100, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_linux_syscall3(i64 34, i64 -100, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_mkdirat(i64 %dirfd, ptr %path, i64 %mode) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_mode = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall3(i64 34, i64 %dirfd, i64 %path_i, i64 %mode)
+  %r = call i64 @__mtrt_linux_syscall3(i64 34, i64 %native_dirfd, i64 %path_i, i64 %native_mode)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode) {
+define hidden i64 @__mtrt_host_mkfifo(ptr %path, i64 %mode) {
   %path_i = ptrtoint ptr %path to i64
-  %perm = and i64 %mode, 511
+  %perm = call i64 @__mtrt_linux_mode_to_native(i64 %mode)
   %fifo_mode = or i64 %perm, 4096
   %r = call i64 @__mtrt_linux_syscall4(i64 33, i64 -100, i64 %path_i, i64 %fifo_mode, i64 0)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
+define hidden i64 @__mtrt_host_readlink(ptr %path, ptr %buf, i64 %size) {
   %path_i = ptrtoint ptr %path to i64
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall4(i64 78, i64 -100, i64 %path_i, i64 %buf_i, i64 %size)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_readlinkat(i64 %dirfd, ptr %path, ptr %buf, i64 %size) {
+define hidden i64 @__mtrt_host_readlinkat(i64 %dirfd, ptr %path, ptr %buf, i64 %size) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
   %path_i = ptrtoint ptr %path to i64
   %buf_i = ptrtoint ptr %buf to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 78, i64 %dirfd, i64 %path_i, i64 %buf_i, i64 %size)
+  %r = call i64 @__mtrt_linux_syscall4(i64 78, i64 %native_dirfd, i64 %path_i, i64 %buf_i, i64 %size)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath) {
+define hidden i64 @__mtrt_host_rename(ptr %oldpath, ptr %newpath) {
   %oldpath_i = ptrtoint ptr %oldpath to i64
   %newpath_i = ptrtoint ptr %newpath to i64
   %r = call i64 @__mtrt_linux_syscall4(i64 38, i64 -100, i64 %oldpath_i, i64 -100, i64 %newpath_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_renameat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath) {
+define hidden i64 @__mtrt_host_renameat(i64 %olddirfd, ptr %oldpath, i64 %newdirfd, ptr %newpath) {
+  %native_olddirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %olddirfd)
+  %native_newdirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %newdirfd)
   %oldpath_i = ptrtoint ptr %oldpath to i64
   %newpath_i = ptrtoint ptr %newpath to i64
-  %r = call i64 @__mtrt_linux_syscall4(i64 38, i64 %olddirfd, i64 %oldpath_i, i64 %newdirfd, i64 %newpath_i)
+  %r = call i64 @__mtrt_linux_syscall4(i64 38, i64 %native_olddirfd, i64 %oldpath_i, i64 %native_newdirfd, i64 %newpath_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_rmdir(ptr %path) {
+define hidden i64 @__mtrt_host_rmdir(ptr %path) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 35, i64 -100, i64 %path_i, i64 512)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath) {
+define hidden i64 @__mtrt_host_symlink(ptr %target, ptr %linkpath) {
   %target_i = ptrtoint ptr %target to i64
   %linkpath_i = ptrtoint ptr %linkpath to i64
   %r = call i64 @__mtrt_linux_syscall3(i64 36, i64 %target_i, i64 -100, i64 %linkpath_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
+define hidden i64 @__mtrt_host_symlinkat(ptr %target, i64 %newdirfd, ptr %linkpath) {
+  %native_newdirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %newdirfd)
   %target_i = ptrtoint ptr %target to i64
   %linkpath_i = ptrtoint ptr %linkpath to i64
-  %r = call i64 @__mtrt_linux_syscall3(i64 36, i64 %target_i, i64 %newdirfd, i64 %linkpath_i)
+  %r = call i64 @__mtrt_linux_syscall3(i64 36, i64 %target_i, i64 %native_newdirfd, i64 %linkpath_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_stat(ptr %path, ptr %buf) {
+define hidden i64 @__mtrt_host_stat(ptr %path, ptr %buf) {
   %r = call i64 @__mtrt_linux_statx_to_target(i64 -100, ptr %path, i64 0, ptr %buf)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fstat(i64 %fd, ptr %buf) {
+define hidden i64 @__mtrt_host_fstat(i64 %fd, ptr %buf) {
   %r = call i64 @__mtrt_linux_statx_to_target(i64 %fd, ptr @.mtrt_empty_path, i64 4096, ptr %buf)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
+define hidden i64 @__mtrt_host_lstat(ptr %path, ptr %buf) {
   %r = call i64 @__mtrt_linux_statx_to_target(i64 -100, ptr %path, i64 256, ptr %buf)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
-  %r = call i64 @__mtrt_linux_statx_to_target(i64 %dirfd, ptr %path, i64 %flags, ptr %buf)
+define hidden i64 @__mtrt_host_fstatat(i64 %dirfd, ptr %path, ptr %buf, i64 %flags) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_flags = call i64 @__mtrt_linux_at_flags_to_native(i64 %flags)
+  %r = call i64 @__mtrt_linux_statx_to_target(i64 %native_dirfd, ptr %path, i64 %native_flags, ptr %buf)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_ftruncate(i64 %fd, i64 %length) {
+define hidden i64 @__mtrt_host_ftruncate(i64 %fd, i64 %length) {
   %r = call i64 @__mtrt_linux_syscall2(i64 46, i64 %fd, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
+define hidden i64 @__mtrt_host_chown(ptr %path, i64 %uid, i64 %gid) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall5(i64 54, i64 -100, i64 %path_i, i64 %uid, i64 %gid, i64 0)
   ret i64 %r
@@ -889,7 +934,7 @@ declare void @__mtrt_linux_overlay_native_termios(ptr %native, ptr %target)
 declare i64 @__mtrt_linux_tcsetattr_request(i64 %action)
 
 
-define i64 @__mtrt_host_tcgetattr(i64 %fd, ptr %termios) {
+define hidden i64 @__mtrt_host_tcgetattr(i64 %fd, ptr %termios) {
 entry:
   %is_null = icmp eq ptr %termios, null
   br i1 %is_null, label %fault, label %call_get
@@ -913,7 +958,7 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_isatty(i64 %fd) {
+define hidden i64 @__mtrt_host_isatty(i64 %fd) {
 entry:
   %native = alloca [36 x i8], align 4
   %r = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21505, ptr %native)
@@ -938,7 +983,7 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
+define hidden i64 @__mtrt_host_tcsetattr(i64 %fd, i64 %action, ptr %termios) {
 entry:
   %is_null = icmp eq ptr %termios, null
   br i1 %is_null, label %fault, label %map_action
@@ -979,7 +1024,7 @@ done:
   ret i64 %get
 }
 
-define i64 @__mtrt_host_tcdrain(i64 %fd) {
+define hidden i64 @__mtrt_host_tcdrain(i64 %fd) {
 entry:
   %r = call i64 @__mtrt_linux_ioctl_int(i64 %fd, i64 21513, i64 1)
   ret i64 %r
@@ -988,7 +1033,7 @@ entry:
 declare i64 @__mtrt_linux_tcflow_action(i64 %action)
 
 
-define i64 @__mtrt_host_tcflow(i64 %fd, i64 %action) {
+define hidden i64 @__mtrt_host_tcflow(i64 %fd, i64 %action) {
 entry:
   %native = call i64 @__mtrt_linux_tcflow_action(i64 %action)
   %bad = icmp eq i64 %native, -1
@@ -1005,7 +1050,7 @@ call_ioctl:
 declare i64 @__mtrt_linux_tcflush_selector(i64 %selector)
 
 
-define i64 @__mtrt_host_tcflush(i64 %fd, i64 %selector) {
+define hidden i64 @__mtrt_host_tcflush(i64 %fd, i64 %selector) {
 entry:
   %native = call i64 @__mtrt_linux_tcflush_selector(i64 %selector)
   %bad = icmp eq i64 %native, -1
@@ -1019,7 +1064,7 @@ call_ioctl:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_tcsendbreak(i64 %fd, i64 %duration) {
+define hidden i64 @__mtrt_host_tcsendbreak(i64 %fd, i64 %duration) {
 entry:
   %is_zero = icmp eq i64 %duration, 0
   br i1 %is_zero, label %basic, label %duration_ioctl
@@ -1033,7 +1078,7 @@ duration_ioctl:
   ret i64 %r1
 }
 
-define i64 @__mtrt_host_tcgetpgrp(i64 %fd) {
+define hidden i64 @__mtrt_host_tcgetpgrp(i64 %fd) {
 entry:
   %pgrp = alloca i32, align 4
   %r = call i64 @__mtrt_linux_ioctl_ptr(i64 %fd, i64 21519, ptr %pgrp)
@@ -1049,7 +1094,7 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_tcsetpgrp(i64 %fd, i64 %pgrp) {
+define hidden i64 @__mtrt_host_tcsetpgrp(i64 %fd, i64 %pgrp) {
 entry:
   %slot = alloca i32, align 4
   %pgrp32 = trunc i64 %pgrp to i32
@@ -1058,7 +1103,7 @@ entry:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
+define hidden i64 @__mtrt_host_clock_getres(i64 %clockid, ptr %tp) {
 entry:
   %native_clockid = call i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
   %bad_clockid = icmp slt i64 %native_clockid, 0
@@ -1073,7 +1118,7 @@ invalid_clockid:
   ret i64 %native_clockid
 }
 
-define i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
+define hidden i64 @__mtrt_host_clock_settime(i64 %clockid, ptr %tp) {
 entry:
   %native_clockid = call i64 @__mtrt_linux_clockid_from_target(i64 %clockid)
   %bad_clockid = icmp slt i64 %native_clockid, 0
@@ -1095,7 +1140,7 @@ invalid_monotonic:
   ret i64 -22
 }
 
-define i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
+define hidden i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
   %path_i = ptrtoint ptr %path to i64
   %argv_i = ptrtoint ptr %argv to i64
   %envp_i = ptrtoint ptr %envp to i64
@@ -1103,14 +1148,16 @@ define i64 @__mtrt_host_execve(ptr %path, ptr %argv, ptr %envp) {
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchown(i64 %fd, i64 %uid, i64 %gid) {
+define hidden i64 @__mtrt_host_fchown(i64 %fd, i64 %uid, i64 %gid) {
   %r = call i64 @__mtrt_linux_syscall3(i64 55, i64 %fd, i64 %uid, i64 %gid)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 %flags) {
+define hidden i64 @__mtrt_host_fchownat(i64 %dirfd, ptr %path, i64 %uid, i64 %gid, i64 %flags) {
+  %native_dirfd = call i64 @__mtrt_linux_dirfd_to_native(i64 %dirfd)
+  %native_flags = call i64 @__mtrt_linux_at_flags_to_native(i64 %flags)
   %path_i = ptrtoint ptr %path to i64
-  %r = call i64 @__mtrt_linux_syscall5(i64 54, i64 %dirfd, i64 %path_i, i64 %uid, i64 %gid, i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall5(i64 54, i64 %native_dirfd, i64 %path_i, i64 %uid, i64 %gid, i64 %native_flags)
   ret i64 %r
 }
 
@@ -1141,7 +1188,7 @@ declare i64 @__mtrt_linux_flock_target_to_native(ptr %target, ptr %native)
 declare i64 @__mtrt_linux_flock_native_to_target(ptr %target, ptr %native)
 
 
-define i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
+define hidden i64 @__mtrt_host_fcntl(i64 %fd, i64 %cmd, i64 %arg) {
 entry:
   %native_cmd = call i64 @__mtrt_linux_fcntl_cmd_from_target(i64 %cmd)
   switch i64 %cmd, label %scalar [
@@ -1198,8 +1245,14 @@ lock:
   br i1 %lock_null, label %fault, label %copy_lock_in
 
 copy_lock_in:
+  %target_flock_scratch = alloca [32 x i8], align 8
   %native_flock = alloca [32 x i8], align 8
-  %prep = call i64 @__mtrt_linux_flock_target_to_native(ptr %target_flock, ptr %native_flock)
+  %input_copied = call i64 @__mtrt_linux_copy_from_target(ptr %target_flock_scratch, ptr %target_flock, i64 32)
+  %input_copy_bad = icmp slt i64 %input_copied, 0
+  br i1 %input_copy_bad, label %input_copy_done, label %prepare_lock
+
+prepare_lock:
+  %prep = call i64 @__mtrt_linux_flock_target_to_native(ptr %target_flock_scratch, ptr %native_flock)
   %prep_bad = icmp slt i64 %prep, 0
   br i1 %prep_bad, label %prep_done, label %call_lock
 
@@ -1212,8 +1265,16 @@ call_lock:
   br i1 %copy_out, label %copy_lock_out, label %lock_done
 
 copy_lock_out:
-  %copy = call i64 @__mtrt_linux_flock_native_to_target(ptr %target_flock, ptr %native_flock)
+  %translated = call i64 @__mtrt_linux_flock_native_to_target(ptr %target_flock_scratch, ptr %native_flock)
+  %translate_bad = icmp slt i64 %translated, 0
+  br i1 %translate_bad, label %translate_done, label %copy_target_lock
+
+copy_target_lock:
+  %copy = call i64 @__mtrt_linux_copy_to_target(ptr %target_flock, ptr %target_flock_scratch, i64 32)
   ret i64 %copy
+
+translate_done:
+  ret i64 %translated
 
 lock_done:
   ret i64 %lock_r
@@ -1221,21 +1282,24 @@ lock_done:
 prep_done:
   ret i64 %prep
 
+input_copy_done:
+  ret i64 %input_copied
+
 fault:
   ret i64 -14
 }
 
-define i64 @__mtrt_host_fdatasync(i64 %fd) {
+define hidden i64 @__mtrt_host_fdatasync(i64 %fd) {
   %r = call i64 @__mtrt_linux_syscall1(i64 83, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_fsync(i64 %fd) {
+define hidden i64 @__mtrt_host_fsync(i64 %fd) {
   %r = call i64 @__mtrt_linux_syscall1(i64 82, i64 %fd)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_getcwd(ptr %buf, i64 %size) {
+define hidden i64 @__mtrt_host_getcwd(ptr %buf, i64 %size) {
 entry:
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall2(i64 17, i64 %buf_i, i64 %size)
@@ -1250,48 +1314,53 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
+define hidden i64 @__mtrt_host_lchown(ptr %path, i64 %uid, i64 %gid) {
   %path_i = ptrtoint ptr %path to i64
   %r = call i64 @__mtrt_linux_syscall5(i64 54, i64 -100, i64 %path_i, i64 %uid, i64 %gid, i64 256)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
-  %r = call i64 @__mtrt_linux_syscall3(i64 233, i64 %addr, i64 %length, i64 %advice)
+define hidden i64 @__mtrt_host_madvise(i64 %addr, i64 %length, i64 %advice) {
+  %native_advice = call i64 @__mtrt_linux_madvise_to_native(i64 %advice)
+  %r = call i64 @__mtrt_linux_syscall3(i64 233, i64 %addr, i64 %length, i64 %native_advice)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
+define hidden i64 @__mtrt_host_mlock(i64 %addr, i64 %length) {
   %r = call i64 @__mtrt_linux_syscall2(i64 228, i64 %addr, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
-  %r = call i64 @__mtrt_linux_syscall6(i64 222, i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset)
+define hidden i64 @__mtrt_host_mmap(i64 %addr, i64 %length, i64 %prot, i64 %flags, i64 %fd, i64 %offset) {
+  %native_prot = call i64 @__mtrt_linux_prot_to_native(i64 %prot)
+  %native_flags = call i64 @__mtrt_linux_mmap_flags_to_native(i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall6(i64 222, i64 %addr, i64 %length, i64 %native_prot, i64 %native_flags, i64 %fd, i64 %offset)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
-  %r = call i64 @__mtrt_linux_syscall3(i64 226, i64 %addr, i64 %length, i64 %prot)
+define hidden i64 @__mtrt_host_mprotect(i64 %addr, i64 %length, i64 %prot) {
+  %native_prot = call i64 @__mtrt_linux_prot_to_native(i64 %prot)
+  %r = call i64 @__mtrt_linux_syscall3(i64 226, i64 %addr, i64 %length, i64 %native_prot)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
-  %r = call i64 @__mtrt_linux_syscall3(i64 227, i64 %addr, i64 %length, i64 %flags)
+define hidden i64 @__mtrt_host_msync(i64 %addr, i64 %length, i64 %flags) {
+  %native_flags = call i64 @__mtrt_linux_msync_flags_to_native(i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall3(i64 227, i64 %addr, i64 %length, i64 %native_flags)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
+define hidden i64 @__mtrt_host_munlock(i64 %addr, i64 %length) {
   %r = call i64 @__mtrt_linux_syscall2(i64 229, i64 %addr, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
+define hidden i64 @__mtrt_host_munmap(i64 %addr, i64 %length) {
   %r = call i64 @__mtrt_linux_syscall2(i64 215, i64 %addr, i64 %length)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_pause() {
+define hidden i64 @__mtrt_host_pause() {
 entry:
   %native_old = alloca i64, align 8
   %target_old = alloca i64, align 8
@@ -1315,18 +1384,19 @@ done:
   ret i64 %get_mask
 }
 
-define i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
+define hidden i64 @__mtrt_host_pipe2(ptr %fds, i64 %flags) {
+  %native_flags = call i64 @__mtrt_linux_pipe2_flags_to_native(i64 %flags)
   %fds_i = ptrtoint ptr %fds to i64
-  %r = call i64 @__mtrt_linux_syscall2(i64 59, i64 %fds_i, i64 %flags)
+  %r = call i64 @__mtrt_linux_syscall2(i64 59, i64 %fds_i, i64 %native_flags)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sched_yield() {
+define hidden i64 @__mtrt_host_sched_yield() {
   %r = call i64 @__mtrt_linux_syscall0(i64 124)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
+define hidden i64 @__mtrt_host_sigaction(i64 %sig, ptr %act, ptr %oldact) {
 entry:
   %native_act = alloca [32 x i8], align 8
   %native_oldact = alloca [32 x i8], align 8
@@ -1456,14 +1526,79 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
-  %ss_i = ptrtoint ptr %ss to i64
-  %old_i = ptrtoint ptr %old_ss to i64
+define hidden i64 @__mtrt_host_sigaltstack(ptr %ss, ptr %old_ss) {
+entry:
+  %native_ss = alloca [24 x i8], align 8
+  %native_old = alloca [24 x i8], align 8
+  %target_ss = alloca [24 x i8], align 8
+  %target_old = alloca [24 x i8], align 8
+  %ss_null = icmp eq ptr %ss, null
+  br i1 %ss_null, label %prepare_old, label %copy_ss
+
+copy_ss:
+  %ss_copied = call i64 @__mtrt_linux_copy_from_target(ptr %target_ss, ptr %ss, i64 24)
+  %ss_copy_ok = icmp eq i64 %ss_copied, 0
+  br i1 %ss_copy_ok, label %translate_ss, label %fault
+
+translate_ss:
+  %sp_i = load i64, ptr %target_ss, align 8
+  %size_p = getelementptr i8, ptr %target_ss, i64 8
+  %size = load i64, ptr %size_p, align 8
+  %flags_p = getelementptr i8, ptr %target_ss, i64 16
+  %flags = load i32, ptr %flags_p, align 4
+  %flags_zero = icmp eq i32 %flags, 0
+  %flags_disable = icmp eq i32 %flags, 2
+  %flags_ok = or i1 %flags_zero, %flags_disable
+  br i1 %flags_ok, label %store_ss, label %invalid
+
+store_ss:
+  %sp = inttoptr i64 %sp_i to ptr
+  store ptr %sp, ptr %native_ss, align 8
+  %native_flags_p = getelementptr i8, ptr %native_ss, i64 8
+  store i32 %flags, ptr %native_flags_p, align 4
+  %native_size_p = getelementptr i8, ptr %native_ss, i64 16
+  store i64 %size, ptr %native_size_p, align 8
+  br label %prepare_old
+
+prepare_old:
+  %native_ss_arg = phi ptr [ null, %entry ], [ %native_ss, %store_ss ]
+  %old_null = icmp eq ptr %old_ss, null
+  %native_old_arg = select i1 %old_null, ptr null, ptr %native_old
+  %ss_i = ptrtoint ptr %native_ss_arg to i64
+  %old_i = ptrtoint ptr %native_old_arg to i64
   %r = call i64 @__mtrt_linux_syscall2(i64 132, i64 %ss_i, i64 %old_i)
+  %failed = icmp slt i64 %r, 0
+  %skip_old = or i1 %failed, %old_null
+  br i1 %skip_old, label %done, label %translate_old
+
+translate_old:
+  %old_sp = load i64, ptr %native_old, align 8
+  %old_native_flags_p = getelementptr i8, ptr %native_old, i64 8
+  %old_flags = load i32, ptr %old_native_flags_p, align 4
+  %old_native_size_p = getelementptr i8, ptr %native_old, i64 16
+  %old_size = load i64, ptr %old_native_size_p, align 8
+  store i64 %old_sp, ptr %target_old, align 8
+  %old_size_p = getelementptr i8, ptr %target_old, i64 8
+  store i64 %old_size, ptr %old_size_p, align 8
+  %old_flags_p = getelementptr i8, ptr %target_old, i64 16
+  store i32 %old_flags, ptr %old_flags_p, align 4
+  %old_reserved_p = getelementptr i8, ptr %target_old, i64 20
+  store i32 0, ptr %old_reserved_p, align 4
+  %old_copied = call i64 @__mtrt_linux_copy_to_target(ptr %old_ss, ptr %target_old, i64 24)
+  %old_copy_ok = icmp eq i64 %old_copied, 0
+  br i1 %old_copy_ok, label %done, label %fault
+
+fault:
+  ret i64 -14
+
+invalid:
+  ret i64 -22
+
+done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigpending(ptr %sigset) {
+define hidden i64 @__mtrt_host_sigpending(ptr %sigset) {
 entry:
   %native_sigset = alloca i64, align 8
   %is_null = icmp eq ptr %sigset, null
@@ -1481,14 +1616,17 @@ call_sigpending:
 store_sigset:
   %native_value = load i64, ptr %native_sigset, align 8
   %target_value = call i64 @__mtrt_linux_sigset_from_native(i64 %native_value)
-  store i64 %target_value, ptr %sigset, align 8
-  ret i64 %r
+  %target_value_p = alloca i64, align 8
+  store i64 %target_value, ptr %target_value_p, align 8
+  %copied = call i64 @__mtrt_linux_copy_to_target(ptr %sigset, ptr %target_value_p, i64 8)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %done, label %fault
 
 done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
+define hidden i64 @__mtrt_host_sigprocmask(i64 %how, ptr %set, ptr %oldset) {
 entry:
   %native_set = alloca i64, align 8
   %native_oldset = alloca i64, align 8
@@ -1557,22 +1695,23 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
+define hidden i64 @__mtrt_host_sigsuspend(ptr %sigmask) {
 entry:
   %native_sigmask = alloca i64, align 8
+  %target_sigmask = alloca i64, align 8
   %is_null = icmp eq ptr %sigmask, null
-  br i1 %is_null, label %fault, label %check_ptr
+  br i1 %is_null, label %fault, label %copy_mask
 
 fault:
   ret i64 -14
 
-check_ptr:
-  %sigmask_addr = ptrtoint ptr %sigmask to i64
-  %bad_ptr = icmp ult i64 %sigmask_addr, 4096
-  br i1 %bad_ptr, label %fault, label %copy_mask
-
 copy_mask:
-  %target_mask = load i64, ptr %sigmask, align 8
+  %copied = call i64 @__mtrt_linux_copy_from_target(ptr %target_sigmask, ptr %sigmask, i64 8)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %translate_mask, label %fault
+
+translate_mask:
+  %target_mask = load i64, ptr %target_sigmask, align 8
   %native_mask = call i64 @__mtrt_linux_sigset_to_native(i64 %target_mask)
   %bad_mask = icmp slt i64 %native_mask, 0
   br i1 %bad_mask, label %invalid, label %call_sigsuspend
@@ -1587,10 +1726,12 @@ call_sigsuspend:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
+define hidden i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr %timeout) {
 entry:
   %native_set = alloca i64, align 8
   %native_info = alloca [128 x i8], align 8
+  %target_set_p = alloca i64, align 8
+  %target_info = alloca [16 x i8], align 8
   %set_is_null = icmp eq ptr %set, null
   br i1 %set_is_null, label %fault, label %copy_set
 
@@ -1598,7 +1739,12 @@ fault:
   ret i64 -14
 
 copy_set:
-  %target_set = load i64, ptr %set, align 8
+  %set_copied = call i64 @__mtrt_linux_copy_from_target(ptr %target_set_p, ptr %set, i64 8)
+  %set_copy_ok = icmp eq i64 %set_copied, 0
+  br i1 %set_copy_ok, label %translate_set, label %fault
+
+translate_set:
+  %target_set = load i64, ptr %target_set_p, align 8
   %native_set_value = call i64 @__mtrt_linux_sigset_to_native(i64 %target_set)
   %bad_set = icmp slt i64 %native_set_value, 0
   br i1 %bad_set, label %invalid, label %prep_info
@@ -1627,8 +1773,10 @@ maybe_copy_info:
   br i1 %info_is_null, label %return_signal, label %copy_info
 
 copy_info:
-  call void @__mtrt_linux_siginfo_to_target(ptr %info, ptr %native_info)
-  br label %return_signal
+  call void @__mtrt_linux_siginfo_to_target(ptr %target_info, ptr %native_info)
+  %info_copied = call i64 @__mtrt_linux_copy_to_target(ptr %info, ptr %target_info, i64 16)
+  %info_copy_ok = icmp eq i64 %info_copied, 0
+  br i1 %info_copy_ok, label %return_signal, label %fault
 
 return_signal:
   %target_sig = call i64 @__mtrt_linux_signal_from_native(i64 %r)
@@ -1638,19 +1786,20 @@ done:
   ret i64 %r
 }
 
-define i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
+define hidden i64 @__mtrt_host_sigwaitinfo(ptr %set, ptr %info) {
   %r = call i64 @__mtrt_host_sigtimedwait(ptr %set, ptr %info, ptr null)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_times(ptr %buf) {
+define hidden i64 @__mtrt_host_times(ptr %buf) {
   %buf_i = ptrtoint ptr %buf to i64
   %r = call i64 @__mtrt_linux_syscall1(i64 153, i64 %buf_i)
   ret i64 %r
 }
 
-define i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
+define hidden i64 @__mtrt_host_utimes(ptr %path, ptr %times) {
 entry:
+  %target_times = alloca [32 x i8], align 8
   %path_i = ptrtoint ptr %path to i64
   %is_null = icmp eq ptr %times, null
   br i1 %is_null, label %call_null, label %convert
@@ -1660,10 +1809,15 @@ call_null:
   ret i64 %r_null
 
 convert:
-  %atime_sec_p = getelementptr i8, ptr %times, i64 0
-  %atime_usec_p = getelementptr i8, ptr %times, i64 8
-  %mtime_sec_p = getelementptr i8, ptr %times, i64 16
-  %mtime_usec_p = getelementptr i8, ptr %times, i64 24
+  %copied = call i64 @__mtrt_linux_copy_from_target(ptr %target_times, ptr %times, i64 32)
+  %copy_ok = icmp eq i64 %copied, 0
+  br i1 %copy_ok, label %load_times, label %copy_fault
+
+load_times:
+  %atime_sec_p = getelementptr i8, ptr %target_times, i64 0
+  %atime_usec_p = getelementptr i8, ptr %target_times, i64 8
+  %mtime_sec_p = getelementptr i8, ptr %target_times, i64 16
+  %mtime_usec_p = getelementptr i8, ptr %target_times, i64 24
   %atime_sec = load i64, ptr %atime_sec_p, align 8
   %atime_usec = load i64, ptr %atime_usec_p, align 8
   %mtime_sec = load i64, ptr %mtime_sec_p, align 8
@@ -1679,6 +1833,9 @@ convert:
 
 invalid:
   ret i64 -22
+
+copy_fault:
+  ret i64 %copied
 
 store:
   %ts = alloca [4 x i64], align 8
