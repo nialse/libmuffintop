@@ -88,22 +88,45 @@ entry:
   ret i64 %target
 }
 
-define internal i64 @__mtrt_linux_copy_from_target(ptr %dst, ptr %src, i64 %len) {
+define internal i64 @__mtrt_linux_copy_checked(ptr %dst, ptr %src, i64 %len) {
 entry:
-  %local = alloca [16 x i8], align 8
-  %remote = alloca [16 x i8], align 8
-  store ptr %dst, ptr %local, align 8
-  %local_len_p = getelementptr i8, ptr %local, i64 8
-  store i64 %len, ptr %local_len_p, align 8
-  store ptr %src, ptr %remote, align 8
-  %remote_len_p = getelementptr i8, ptr %remote, i64 8
-  store i64 %len, ptr %remote_len_p, align 8
-  %pid = call i64 @__mtrt_linux_syscall0(i64 39)
-  %local_i = ptrtoint ptr %local to i64
-  %remote_i = ptrtoint ptr %remote to i64
-  %r = call i64 @__mtrt_linux_syscall6(i64 310, i64 %pid, i64 %local_i, i64 1, i64 %remote_i, i64 1, i64 0)
-  %ok = icmp eq i64 %r, %len
-  br i1 %ok, label %done, label %fault
+  %zero = icmp eq i64 %len, 0
+  br i1 %zero, label %done, label %open_pipe
+
+open_pipe:
+  %fds = alloca [2 x i32], align 4
+  %fds_i = ptrtoint ptr %fds to i64
+  %opened = call i64 @__mtrt_linux_syscall2(i64 293, i64 %fds_i, i64 0)
+  %open_ok = icmp eq i64 %opened, 0
+  br i1 %open_ok, label %write_source, label %fault
+
+write_source:
+  %read_fd_p = getelementptr inbounds [2 x i32], ptr %fds, i32 0, i32 0
+  %write_fd_p = getelementptr inbounds [2 x i32], ptr %fds, i32 0, i32 1
+  %read_fd32 = load i32, ptr %read_fd_p, align 4
+  %write_fd32 = load i32, ptr %write_fd_p, align 4
+  %read_fd = sext i32 %read_fd32 to i64
+  %write_fd = sext i32 %write_fd32 to i64
+  %src_i = ptrtoint ptr %src to i64
+  %written = call i64 @__mtrt_linux_syscall3(i64 1, i64 %write_fd, i64 %src_i, i64 %len)
+  %write_ok = icmp eq i64 %written, %len
+  br i1 %write_ok, label %read_target, label %fault_close
+
+read_target:
+  %dst_i = ptrtoint ptr %dst to i64
+  %read = call i64 @__mtrt_linux_syscall3(i64 0, i64 %read_fd, i64 %dst_i, i64 %len)
+  %read_ok = icmp eq i64 %read, %len
+  br i1 %read_ok, label %close_done, label %fault_close
+
+close_done:
+  %close_read = call i64 @__mtrt_linux_syscall1(i64 3, i64 %read_fd)
+  %close_write = call i64 @__mtrt_linux_syscall1(i64 3, i64 %write_fd)
+  br label %done
+
+fault_close:
+  %fault_close_read = call i64 @__mtrt_linux_syscall1(i64 3, i64 %read_fd)
+  %fault_close_write = call i64 @__mtrt_linux_syscall1(i64 3, i64 %write_fd)
+  br label %fault
 
 done:
   ret i64 0
@@ -112,28 +135,16 @@ fault:
   ret i64 -14
 }
 
+define internal i64 @__mtrt_linux_copy_from_target(ptr %dst, ptr %src, i64 %len) {
+entry:
+  %result = call i64 @__mtrt_linux_copy_checked(ptr %dst, ptr %src, i64 %len)
+  ret i64 %result
+}
+
 define internal i64 @__mtrt_linux_copy_to_target(ptr %dst, ptr %src, i64 %len) {
 entry:
-  %local = alloca [16 x i8], align 8
-  %remote = alloca [16 x i8], align 8
-  store ptr %src, ptr %local, align 8
-  %local_len_p = getelementptr i8, ptr %local, i64 8
-  store i64 %len, ptr %local_len_p, align 8
-  store ptr %dst, ptr %remote, align 8
-  %remote_len_p = getelementptr i8, ptr %remote, i64 8
-  store i64 %len, ptr %remote_len_p, align 8
-  %pid = call i64 @__mtrt_linux_syscall0(i64 39)
-  %local_i = ptrtoint ptr %local to i64
-  %remote_i = ptrtoint ptr %remote to i64
-  %r = call i64 @__mtrt_linux_syscall6(i64 311, i64 %pid, i64 %local_i, i64 1, i64 %remote_i, i64 1, i64 0)
-  %ok = icmp eq i64 %r, %len
-  br i1 %ok, label %done, label %fault
-
-done:
-  ret i64 0
-
-fault:
-  ret i64 -14
+  %result = call i64 @__mtrt_linux_copy_checked(ptr %dst, ptr %src, i64 %len)
+  ret i64 %result
 }
 
 declare i64 @__mtrt_linux_makedev(i32 %major32, i32 %minor32)
