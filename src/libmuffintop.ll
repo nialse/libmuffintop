@@ -183,6 +183,22 @@ declare i64 @__mtrt_host_sigwaitinfo(ptr, ptr)
 declare i64 @__mtrt_host_times(ptr)
 declare i64 @__mtrt_host_utimes(ptr, ptr)
 
+define hidden void @__stack_chk_fail() noreturn {
+entry:
+  call void @__mtrt_host_exit(i64 127)
+  unreachable
+}
+
+define hidden i32 @__fe_getround() {
+entry:
+  ret i32 0
+}
+
+define hidden void @__fe_raise_inexact() {
+entry:
+  ret void
+}
+
 define hidden i8 @__mtrt_common_dtype(i8 %dtype) {
 entry:
   switch i8 %dtype, label %unknown [
